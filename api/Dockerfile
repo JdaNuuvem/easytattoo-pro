@@ -27,9 +27,9 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nestjs && \
     adduser --system --uid 1001 nestjs
 
-# Copy built app and production deps
+# Copy built app and production deps (pnpm hoists to root node_modules)
 COPY --from=builder /app/api/dist ./dist
-COPY --from=builder /app/api/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/api/prisma ./prisma
 COPY --from=builder /app/api/package.json ./
 COPY api/entrypoint.sh ./entrypoint.sh
