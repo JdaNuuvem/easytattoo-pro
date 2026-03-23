@@ -15,6 +15,7 @@ RUN cd api && pnpm exec prisma generate
 
 # === Stage 2: Builder ===
 FROM node:20-alpine AS builder
+ENV NODE_ENV=development
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
