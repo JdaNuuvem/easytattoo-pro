@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile --filter api...
 COPY api ./api
 RUN cd api && pnpm exec prisma generate
 RUN cd api && pnpm exec nest build
-RUN ls -la api/dist/ && test -f api/dist/main.js
+RUN ls -la api/dist/src/ && test -f api/dist/src/main.js
 
 # === Stage 2: Production Runner ===
 FROM node:20-alpine AS runner

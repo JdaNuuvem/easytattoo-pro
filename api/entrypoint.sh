@@ -4,4 +4,4 @@ echo "Running Prisma migrations..."
 prisma migrate deploy --schema=./prisma/schema.prisma || echo "WARNING: Migrations failed, starting anyway..."
 
 echo "Starting EasyTattoo API..."
-exec node dist/main
+exec node dist/src/main
