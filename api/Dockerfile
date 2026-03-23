@@ -5,25 +5,18 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
 # Copy monorepo workspace files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY api/package.json ./api/
 COPY web/package.json ./web/
 
-# Install all dependencies (including devDeps for build)
-RUN pnpm install --frozen-lockfile --filter api...
+# Install all dependencies with shamefully-hoist (flat node_modules)
+RUN pnpm install --filter api...
 
 # Copy source and build
 COPY api ./api
 RUN cd api && pnpm exec prisma generate
 RUN cd api && pnpm exec nest build
 RUN test -f api/dist/src/main.js
-
-# Deploy isolated production bundle using pnpm deploy
-RUN pnpm --filter api deploy /prod/api --prod
-
-# Copy prisma files and generated client to prod bundle
-RUN cp -r api/prisma /prod/api/prisma
-RUN cp -r api/dist /prod/api/dist
 
 # === Stage 2: Production Runner ===
 FROM node:20-alpine AS runner
@@ -34,8 +27,11 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nestjs && \
     adduser --system --uid 1001 nestjs
 
-# Copy the isolated production bundle
-COPY --from=builder /prod/api ./
+# Copy built app and flat node_modules (shamefully-hoisted)
+COPY --from=builder /app/api/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/api/prisma ./prisma
+COPY --from=builder /app/api/package.json ./
 COPY api/entrypoint.sh ./entrypoint.sh
 
 RUN mkdir -p uploads && chown nestjs:nestjs uploads && \
