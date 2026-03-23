@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: easytattoo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-easytattoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-easytattoo}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-easytattoo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - easytattoo-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: easytattoo-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_secret}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secret}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - easytattoo-net
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: easytattoo-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-easytattoo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-easytattoo}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      UPLOAD_DIR: ./uploads
+      PORT: 3000
+      NODE_ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3080}
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/docs || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - easytattoo-net
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:3000}
+    container_name: easytattoo-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:3000}
+      PORT: 3080
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    ports:
+      - "3080:3080"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - easytattoo-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+
+networks:
+  easytattoo-net:
+    driver: bridge

@@ -39,13 +39,15 @@ COPY --from=builder /app/api/dist ./dist
 COPY --from=builder /app/api/node_modules ./node_modules
 COPY --from=builder /app/api/prisma ./prisma
 COPY --from=builder /app/api/package.json ./
+COPY api/entrypoint.sh ./entrypoint.sh
 
 # Create uploads directory with proper ownership
-RUN mkdir -p uploads && chown nestjs:nestjs uploads
+RUN mkdir -p uploads && chown nestjs:nestjs uploads && \
+    chmod +x entrypoint.sh
 
 USER nestjs
 
 EXPOSE 3000
 ENV PORT=3000
 
-CMD ["node", "dist/main"]
+CMD ["./entrypoint.sh"]
