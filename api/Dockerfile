@@ -42,6 +42,9 @@ COPY --from=builder /app/api/prisma ./prisma
 COPY --from=builder /app/api/package.json ./
 COPY api/entrypoint.sh ./entrypoint.sh
 
+# Install prisma CLI for migrations at runtime
+RUN npm install -g prisma@6
+
 # Create uploads directory with proper ownership
 RUN mkdir -p uploads && chown nestjs:nestjs uploads && \
     chmod +x entrypoint.sh
