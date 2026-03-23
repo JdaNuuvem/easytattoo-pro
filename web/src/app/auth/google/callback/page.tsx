@@ -1,0 +1,76 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/api";
+import { Text } from "@/components/ui/typography";
+import { Loader2 } from "lucide-react";
+
+export default function GoogleCallbackPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+
+    if (!code) {
+      setError("Codigo de autorizacao nao recebido");
+      return;
+    }
+
+    async function exchangeCode() {
+      try {
+        const { data } = await api.post("/auth/google/callback", {
+          code,
+          redirectUri: `${window.location.origin}/auth/google/callback`,
+        });
+
+        // Store Google access token for Calendar API
+        if (data.googleAccessToken) {
+          localStorage.setItem("google_access_token", data.googleAccessToken);
+        }
+
+        // If it's a login flow, also store auth token
+        if (data.access_token) {
+          localStorage.setItem("token", data.access_token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+
+        // Redirect based on state
+        if (state === "booking-calendar") {
+          // Go back to the booking page
+          window.history.go(-2);
+        } else {
+          router.push("/dashboard");
+        }
+      } catch (err) {
+        console.error("Google auth error:", err);
+        setError("Erro ao autenticar com Google. Tente novamente.");
+        setTimeout(() => {
+          window.history.go(-2);
+        }, 3000);
+      }
+    }
+
+    exchangeCode();
+  }, [searchParams, router]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center space-y-4">
+        {error ? (
+          <Text className="text-destructive">{error}</Text>
+        ) : (
+          <>
+            <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+            <Text className="text-muted-foreground">
+              Conectando com Google...
+            </Text>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TattooType {
+  DRAWING
+  TEXT
+  CLOSURE
+}
+
+enum ShadingType {
+  NONE
+  LIGHT
+  MEDIUM
+  REALISM
+}
+
+enum ColorType {
+  BLACK
+  ONE_COLOR
+  TWO_COLORS
+  THREE_COLORS
+}
+
+enum PromotionType {
+  NONE
+  MINI_PACK
+  SECOND_TATTOO
+}
+
+enum UserRole {
+  ADMIN
+  ARTIST
+  CLIENT
+}
+
+model User {
+  id                  String          @id @default(uuid())
+  email               String          @unique
+  password            String
+  name                String
+  role                UserRole        @default(ARTIST)
+  phone               String?
+  instagram           String?
+  bio                 String?
+  pixKey              String?
+  pixName             String?
+  pixBank             String?
+  depositPercentage   Float           @default(20)
+  profilePhoto        String?
+  coverPhoto          String?
+  acceptsCompanion    Boolean         @default(true)
+  maxDailyHours       Int             @default(8)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  studios             Studio[]
+  bookings            Booking[]
+  portfolio           Portfolio[]
+  pricingConfig       PricingConfig?
+  workSchedules       WorkSchedule[]
+  specialDates        SpecialDate[]
+  clientProfile       Client?
+
+  @@map("users")
+}
+
+model Studio {
+  id            String          @id @default(uuid())
+  name          String
+  address       String?
+  city          String?
+  state         String?
+  phone         String?
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  bookings      Booking[]
+  workSchedules WorkSchedule[]
+
+  @@map("studios")
+}
+
+model Client {
+  id          String    @id @default(uuid())
+  firstName   String
+  lastName    String
+  phone       String
+  email       String?
+  instagram   String?
+  userId      String?   @unique
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  bookings    Booking[]
+
+  @@map("clients")
+}
+
+model Booking {
+  id                String            @id @default(uuid())
+  status            BookingStatus     @default(PENDING)
+  clientId          String
+  client            Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studioId          String?
+  studio            Studio?           @relation(fields: [studioId], references: [id], onDelete: SetNull)
+  tattooType        TattooType
+  tattooWidth       Float
+  tattooHeight      Float
+  shadingType       ShadingType
+  colorType         ColorType
+  bodyLocation      String
+  hasCompanion      Boolean           @default(false)
+  description       String?
+  promotion         PromotionType     @default(NONE)
+  scheduledDate     DateTime?
+  scheduledTime     String?
+  estimatedDuration Int?
+  totalPrice        Float
+  depositAmount     Float
+  depositPaid       Boolean           @default(false)
+  paymentProof      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  references        BookingReference[]
+
+  @@map("bookings")
+}
+
+model BookingReference {
+  id        String  @id @default(uuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  notes     String?
+
+  @@map("booking_references")
+}
+
+model Portfolio {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl    String
+  title       String?
+  description String?
+  style       String?
+  tags        String[] @default([])
+  isPublic    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("portfolios")
+}
+
+model PricingConfig {
+  id                  String @id @default(uuid())
+  userId              String @unique
+  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  priceTable          Json
+  bodyLocations       Json
+  shadingOptions      Json
+  colorOptions        Json
+  tattooTypes         Json
+  maxDailyTime        Int    @default(480)
+  depositPercentage   Float  @default(20)
+  miniPackPrice       Float?
+  secondTattooDiscount Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("pricing_configs")
+}
+
+model WorkSchedule {
+  id          String  @id @default(uuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studioId    String?
+  studio      Studio? @relation(fields: [studioId], references: [id], onDelete: SetNull)
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isAvailable Boolean @default(true)
+
+  @@map("work_schedules")
+}
+
+model SpecialDate {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  isBlocked Boolean  @default(true)
+  notes     String?
+
+  @@map("special_dates")
+}

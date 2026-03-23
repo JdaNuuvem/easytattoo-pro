@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.next/
+.env
+.env.local
+.env.production
+*.log
+uploads/*
+!uploads/.gitkeep
+.turbo/
+coverage/
+.DS_Store
+Thumbs.db
