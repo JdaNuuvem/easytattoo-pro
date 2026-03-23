@@ -1,5 +1,6 @@
 # === Stage 1: Dependencies ===
 FROM node:20-alpine AS deps
+ENV NODE_ENV=development
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
