@@ -1,23 +1,18 @@
-# === Stage 1: Dependencies ===
-FROM node:20-alpine AS deps
+# === Stage 1: Build ===
+FROM node:20-alpine AS builder
+ENV NODE_ENV=development
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
-# Copy root workspace files for pnpm monorepo resolution
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy monorepo workspace files
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY web/package.json ./web/
 COPY api/package.json ./api/
 
-RUN pnpm install --frozen-lockfile --filter web...
+# Install all dependencies with shamefully-hoist
+RUN pnpm install --filter web...
 
-# === Stage 2: Builder ===
-FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/web/node_modules ./web/node_modules
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy source
 COPY web ./web
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -25,17 +20,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL=http://api:3000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
+# Build Next.js
 WORKDIR /app/web
 RUN pnpm build
 
-# === Stage 3: Production Runner ===
+# === Stage 2: Production Runner ===
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Security: run as non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
