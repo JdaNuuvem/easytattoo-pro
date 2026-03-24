@@ -9,12 +9,14 @@ COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY web/package.json ./web/
 COPY api/package.json ./api/
 
-# Install all dependencies with shamefully-hoist
+# Install all dependencies with shamefully-hoist (NODE_ENV=development to get devDeps)
 RUN pnpm install --filter web...
 
 # Copy source
 COPY web ./web
 
+# Switch to production for Next.js build
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 ARG NEXT_PUBLIC_API_URL=http://api:3000
