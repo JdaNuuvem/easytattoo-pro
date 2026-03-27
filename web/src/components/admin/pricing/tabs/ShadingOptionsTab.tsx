@@ -1,89 +1,122 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "../schema";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { PricingOptionCard } from "@/components/pricing/PricingOptionCard";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Text } from "@/components/ui/typography";
+import { SHADING_OPTIONS } from "@/lib/constants";
 
 interface ShadingOptionsTabProps {
   form: UseFormReturn<FormValues>;
 }
 
 export function ShadingOptionsTab({ form }: ShadingOptionsTabProps) {
-  const addNewShading = () => {
-    const currentShadings = form.getValues("shadingOptions");
-    form.setValue("shadingOptions", [
-      ...currentShadings,
-      {
-        id: `shd-${Date.now()}`,
-        name: "",
-        description: "",
-        additionalPrice: 0,
-        additionalTime: 0,
-      },
-    ]);
+  const currentOptions = form.watch("shadingOptions");
+
+  const isEnabled = (id: string) =>
+    currentOptions.some((opt) => opt.id === id);
+
+  const getOption = (id: string) =>
+    currentOptions.find((opt) => opt.id === id);
+
+  const toggleOption = (id: string, name: string) => {
+    if (isEnabled(id)) {
+      form.setValue(
+        "shadingOptions",
+        currentOptions.filter((opt) => opt.id !== id)
+      );
+    } else {
+      form.setValue("shadingOptions", [
+        ...currentOptions,
+        { id, name, description: "", additionalPrice: 0, additionalTime: 0 },
+      ]);
+    }
   };
 
-  const removeShading = (index: number) => {
-    const currentShadings = form.getValues("shadingOptions");
+  const updateField = (
+    id: string,
+    field: "additionalPrice" | "additionalTime",
+    value: number
+  ) => {
     form.setValue(
       "shadingOptions",
-      currentShadings.filter((_, i) => i !== index)
+      currentOptions.map((opt) =>
+        opt.id === id ? { ...opt, [field]: value } : opt
+      )
     );
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div>
         <h2 className="text-lg font-mono uppercase tracking-wider font-semibold">
-          Opcoes de Sombreamento
+          Opções de Sombreamento
         </h2>
-        <Button
-          type="button"
-          onClick={addNewShading}
-          variant="outline"
-          size="sm"
-          className="border-border"
-        >
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Adicionar Sombreamento
-        </Button>
+        <Text className="text-xs text-muted-foreground mt-1">
+          Ative os tipos de sombreamento que você oferece e defina o valor adicional.
+        </Text>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {form.watch("shadingOptions").map((shading, index) => (
-          <PricingOptionCard
-            key={shading.id}
-            id={shading.id}
-            index={index}
-            form={form}
-            fieldNamePrefix="shadingOptions"
-            onDelete={removeShading}
-          />
-        ))}
-      </div>
+      <div className="space-y-3">
+        {SHADING_OPTIONS.map((opt) => {
+          const enabled = isEnabled(opt.id);
+          const data = getOption(opt.id);
 
-      {form.watch("shadingOptions").length === 0 && (
-        <Card className="border-dashed border-border">
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Nenhuma opcao de sombreamento cadastrada
-            </p>
-            <Button
-              type="button"
-              onClick={addNewShading}
-              variant="outline"
-              size="sm"
-              className="border-border"
+          return (
+            <div
+              key={opt.id}
+              className={`rounded-lg border-2 p-4 transition-all ${
+                enabled
+                  ? "border-primary/30 bg-primary/[0.02]"
+                  : "border-border bg-card opacity-60"
+              }`}
             >
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Adicionar Primeira Opcao
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={enabled}
+                    onCheckedChange={() => toggleOption(opt.id, opt.name)}
+                  />
+                  <span className="font-mono uppercase tracking-wider font-semibold text-sm">
+                    {opt.name}
+                  </span>
+                </div>
+
+                {enabled && (
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">R$</Label>
+                      <Input
+                        type="number"
+                        value={data?.additionalPrice ?? 0}
+                        onChange={(e) =>
+                          updateField(opt.id, "additionalPrice", Number(e.target.value))
+                        }
+                        className="w-20 h-8 text-xs bg-background border-border"
+                        min={0}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">min</Label>
+                      <Input
+                        type="number"
+                        value={data?.additionalTime ?? 0}
+                        onChange={(e) =>
+                          updateField(opt.id, "additionalTime", Number(e.target.value))
+                        }
+                        className="w-20 h-8 text-xs bg-background border-border"
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

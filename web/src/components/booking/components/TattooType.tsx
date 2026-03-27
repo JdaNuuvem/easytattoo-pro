@@ -124,7 +124,7 @@ export function TattooType() {
           Voltar
         </Button>
         <Button onClick={goToNextStep} disabled={!tattooDetails.type}>
-          Proximo
+          Próximo
         </Button>
       </div>
     </div>

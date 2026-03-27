@@ -31,7 +31,7 @@ export function AgeTerms() {
           Termos de Maioridade
         </h3>
         <Text className="text-muted-foreground">
-          Para realizar uma tatuagem, e necessario que voce tenha pelo menos 18 anos de idade.
+          Para realizar uma tatuagem, é necessário que você tenha pelo menos 18 anos de idade.
         </Text>
       </div>
 
@@ -40,16 +40,16 @@ export function AgeTerms() {
           <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
           <div className="space-y-2">
             <Text className="text-sm text-foreground font-medium">
-              Declaracao de Maioridade
+              Declaração de Maioridade
             </Text>
             <Text className="text-sm text-muted-foreground leading-relaxed">
               Ao prosseguir com o agendamento, declaro que tenho 18 (dezoito) anos completos ou mais,
-              estando ciente de que a realizacao de tatuagem em menores de idade e proibida por lei
-              (Lei n 9.828/97 e Estatuto da Crianca e do Adolescente - ECA).
+              estando ciente de que a realização de tatuagem em menores de idade é proibida por lei
+              (Lei nº 9.828/97 e Estatuto da Criança e do Adolescente - ECA).
             </Text>
             <Text className="text-sm text-muted-foreground leading-relaxed">
-              Declaro tambem que estou ciente de que a apresentacao de documento de identidade com
-              foto podera ser solicitada no momento do atendimento para confirmacao da idade.
+              Declaro também que estou ciente de que a apresentação de documento de identidade com
+              foto poderá ser solicitada no momento do atendimento para confirmação da idade.
             </Text>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function AgeTerms() {
 
       {!accepted && (
         <Text className="text-xs text-muted-foreground text-center">
-          Voce precisa aceitar os termos de maioridade para continuar.
+          Você precisa aceitar os termos de maioridade para continuar.
         </Text>
       )}
 

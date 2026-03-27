@@ -16,6 +16,7 @@ export interface BodyLocation {
   description: string;
   additionalPrice: number;
   additionalTime: number;
+  parentId?: string;
 }
 
 export interface ShadingOption {

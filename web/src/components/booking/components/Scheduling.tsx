@@ -21,7 +21,7 @@ import {
 import { useBookingStore } from "@/stores/booking";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { api } from "@/lib/api";
-import { redirectToGoogleAuth } from "@/lib/google-auth";
+import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
 import { GoogleIcon } from "@/components/ui/google-icon";
 import { Calendar, Clock, ExternalLink } from "lucide-react";
 
@@ -38,19 +38,12 @@ interface AvailableSlot {
   endTime: string;
 }
 
-const mockAvailableSlots: AvailableSlot[] = [
-  { id: "1", startTime: "09:00", endTime: "12:00" },
-  { id: "2", startTime: "14:00", endTime: "17:00" },
-  { id: "3", startTime: "10:00", endTime: "13:00" },
-  { id: "4", startTime: "15:00", endTime: "18:00" },
-];
-
 export function Scheduling() {
-  const { scheduling, updateScheduling, artistInfo } = useBookingStore();
+  const { scheduling, updateScheduling, artistInfo, priceCalculation } = useBookingStore();
   const { goToNextStep, goToPreviousStep } = useBookingNavigation();
-  const [availableSlots, setAvailableSlots] =
-    useState<AvailableSlot[]>(mockAvailableSlots);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState(false);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
 
@@ -70,6 +63,7 @@ export function Scheduling() {
 
     async function fetchSlots() {
       setLoadingSlots(true);
+      setSlotsError(false);
       try {
         const { data } = await api.get(
           `/schedule/${artistInfo!.id}/available-slots?date=${selectedDate}`
@@ -77,11 +71,11 @@ export function Scheduling() {
         if (data && Array.isArray(data) && data.length > 0) {
           setAvailableSlots(data);
         } else {
-          setAvailableSlots(mockAvailableSlots);
+          setAvailableSlots([]);
         }
       } catch (error) {
-        console.error("Failed to fetch available slots:", error);
-        setAvailableSlots(mockAvailableSlots);
+        setSlotsError(true);
+        setAvailableSlots([]);
       } finally {
         setLoadingSlots(false);
       }
@@ -175,38 +169,45 @@ export function Scheduling() {
             Escolha a data e horario
           </h3>
           <Text className="text-muted-foreground">
-            O tempo de duracao da sessao sera de aproximadamente 3 horas. Caso
-            ultrapasse, o tatuador combinara o ajuste com voce.
+            {priceCalculation?.totalTime
+              ? `O tempo estimado da sessão é de aproximadamente ${
+                  priceCalculation.totalTime >= 60
+                    ? `${Math.floor(priceCalculation.totalTime / 60)}h${priceCalculation.totalTime % 60 > 0 ? `${priceCalculation.totalTime % 60}min` : ""}`
+                    : `${priceCalculation.totalTime} minutos`
+                }. Caso ultrapasse, o tatuador combinará o ajuste com você.`
+              : "Selecione a data e horário para sua sessão. O tatuador combinará os detalhes com você."}
           </Text>
         </div>
 
         {/* Google Calendar Integration */}
-        <div className="border border-border rounded-sm p-4 bg-card space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <GoogleIcon />
-              <Text className="text-sm font-medium text-foreground">
-                Google Agenda
-              </Text>
+        {isGoogleAuthConfigured() && (
+          <div className="border border-border rounded-sm p-4 bg-card space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <GoogleIcon />
+                <Text className="text-sm font-medium text-foreground">
+                  Google Agenda
+                </Text>
+              </div>
+              {googleConnected ? (
+                <span className="text-xs text-emerald-600 font-medium">Conectado</span>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={handleGoogleLogin}
+                >
+                  Conectar
+                </Button>
+              )}
             </div>
-            {googleConnected ? (
-              <span className="text-xs text-emerald-600 font-medium">Conectado</span>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={handleGoogleLogin}
-              >
-                Conectar
-              </Button>
-            )}
+            <Text className="text-xs text-muted-foreground">
+              Conecte sua conta Google para adicionar o agendamento automaticamente ao seu calendário.
+            </Text>
           </div>
-          <Text className="text-xs text-muted-foreground">
-            Conecte sua conta Google para adicionar o agendamento automaticamente ao seu calendario.
-          </Text>
-        </div>
+        )}
 
         <div className="grid gap-6">
           <FormField
@@ -250,6 +251,15 @@ export function Scheduling() {
                             className="h-14 rounded-sm bg-muted animate-pulse"
                           />
                         ))}
+                      </div>
+                    ) : availableSlots.length === 0 ? (
+                      <div className="p-6 text-center border border-dashed border-border rounded-sm">
+                        <Clock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <Text className="text-sm text-muted-foreground">
+                          {slotsError
+                            ? "Não foi possível carregar os horários. Tente outra data."
+                            : "Nenhum horário disponível nesta data. Escolha outra data."}
+                        </Text>
                       </div>
                     ) : (
                       <RadioGroup

@@ -16,7 +16,7 @@ function GoogleCallbackContent() {
     const state = searchParams.get("state");
 
     if (!code) {
-      setError("Codigo de autorizacao nao recebido");
+      setError("Código de autorização não recebido");
       return;
     }
 
@@ -38,10 +38,29 @@ function GoogleCallbackContent() {
           localStorage.setItem("user", JSON.stringify(data.user));
         }
 
+        // If artist connecting calendar, save to profile
+        if (state === "artist-calendar" && data.googleAccessToken) {
+          try {
+            await api.post("/users/profile/google-calendar/connect", {
+              accessToken: data.googleAccessToken,
+            });
+          } catch (calendarError) {
+            console.error("Failed to save calendar connection:", calendarError);
+          }
+        }
+
         // Redirect based on state
         if (state === "booking-calendar") {
-          // Go back to the booking page
           window.history.go(-2);
+        } else if (state === "artist-calendar") {
+          router.push("/dashboard/perfil");
+        } else if (state === "login" || state === "register") {
+          const role = data.user?.role;
+          if (role === "CLIENT") {
+            router.push("/meus-agendamentos");
+          } else {
+            router.push("/dashboard");
+          }
         } else {
           router.push("/dashboard");
         }

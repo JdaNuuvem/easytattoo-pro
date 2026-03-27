@@ -28,7 +28,7 @@ import { register, getHomeRouteForRole } from "@/lib/auth";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
 import { GoogleIcon } from "@/components/ui/google-icon";
-import { redirectToGoogleAuth } from "@/lib/google-auth";
+import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
 
 const passwordRequirements = [
   { regex: /.{8,}/, label: "Minimo 8 caracteres" },
@@ -40,35 +40,22 @@ const passwordRequirements = [
 
 const registerSchema = z
   .object({
-    name: z.string().min(3, "Nome deve ter no minimo 3 caracteres"),
-    email: z.string().email("Email invalido"),
+    name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
+    email: z.string().email("Email inválido"),
     password: z
       .string()
-      .min(8, "Senha deve ter no minimo 8 caracteres")
-      .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiuscula")
-      .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minuscula")
-      .regex(/[0-9]/, "Senha deve conter pelo menos um numero")
+      .min(8, "Senha deve ter no mínimo 8 caracteres")
+      .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
+      .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
+      .regex(/[0-9]/, "Senha deve conter pelo menos um número")
       .regex(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um caractere especial"),
     confirmPassword: z.string().min(1, "Confirme sua senha"),
-    role: z.enum(["ARTIST", "CLIENT"]),
     phone: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas nao coincidem",
+    message: "As senhas não coincidem",
     path: ["confirmPassword"],
-  })
-  .refine(
-    (data) => {
-      if (data.role === "CLIENT") {
-        return !!data.phone && data.phone.length >= 10;
-      }
-      return true;
-    },
-    {
-      message: "Telefone e obrigatorio para clientes (min. 10 digitos)",
-      path: ["phone"],
-    }
-  );
+  });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -135,12 +122,10 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
-      role: "ARTIST",
       phone: "",
     },
   });
 
-  const selectedRole = form.watch("role");
   const watchedPassword = form.watch("password");
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -150,7 +135,7 @@ export default function RegisterPage() {
         data.email,
         data.password,
         data.name,
-        data.role,
+        "ARTIST",
         data.phone || undefined
       );
       toast({
@@ -177,38 +162,12 @@ export default function RegisterPage() {
             EasyTattoo Pro
           </h2>
         </div>
-        <CardTitle className="text-xl">Criar Conta</CardTitle>
+        <CardTitle className="text-xl">Criar Conta de Tatuador</CardTitle>
         <CardDescription>
-          Preencha os dados abaixo para criar sua conta
+          Preencha os dados abaixo para criar sua conta profissional
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Role Toggle */}
-        <div className="flex rounded-lg border border-border overflow-hidden mb-6">
-          <button
-            type="button"
-            onClick={() => form.setValue("role", "ARTIST", { shouldValidate: true })}
-            className={`flex-1 py-2.5 text-sm font-mono uppercase tracking-wider transition-colors ${
-              selectedRole === "ARTIST"
-                ? "bg-primary text-primary-foreground"
-                : "bg-background text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Sou Tatuador
-          </button>
-          <button
-            type="button"
-            onClick={() => form.setValue("role", "CLIENT", { shouldValidate: true })}
-            className={`flex-1 py-2.5 text-sm font-mono uppercase tracking-wider transition-colors ${
-              selectedRole === "CLIENT"
-                ? "bg-primary text-primary-foreground"
-                : "bg-background text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Sou Cliente
-          </button>
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -247,25 +206,23 @@ export default function RegisterPage() {
               )}
             />
 
-            {selectedRole === "CLIENT" && (
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone (WhatsApp)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="(11) 99999-9999"
-                        className="bg-background border-border focus:ring-primary focus:border-primary"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone / WhatsApp (opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="(11) 99999-9999"
+                      className="bg-background border-border focus:ring-primary focus:border-primary"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -317,27 +274,40 @@ export default function RegisterPage() {
           </form>
         </Form>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
-          </div>
-        </div>
+        {isGoogleAuthConfigured() && (
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">ou</span>
+              </div>
+            </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full flex items-center gap-3"
-          onClick={() => redirectToGoogleAuth("register")}
-        >
-          <GoogleIcon />
-          Criar conta com Google
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center gap-3"
+              onClick={() => {
+                const ok = redirectToGoogleAuth("register");
+                if (!ok) {
+                  toast({
+                    variant: "destructive",
+                    title: "Google não configurado",
+                    description: "O cadastro via Google não está disponível no momento.",
+                  });
+                }
+              }}
+            >
+              <GoogleIcon />
+              Criar conta com Google
+            </Button>
+          </>
+        )}
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Ja tem uma conta?{" "}
+          Já tem uma conta?{" "}
           <Link
             href="/login"
             className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"

@@ -27,6 +27,10 @@ export interface BookingState {
     pixKey?: string;
     pixName?: string;
     pixBank?: string;
+    acceptsCompanion?: boolean;
+    maxCompanions?: number;
+    paymentMethods?: string[];
+    studios?: Array<{ id: string; name: string; address?: string }>;
   } | null;
   personalInfo: {
     firstName: string;
@@ -34,6 +38,7 @@ export interface BookingState {
     phone: string;
     email: string;
     instagram: string | "";
+    birthDate: string;
   };
   geolocation: {
     latitude: number;
@@ -44,6 +49,7 @@ export interface BookingState {
   } | null;
   companion: {
     hasCompanion: boolean;
+    companionCount: number;
     companionPurpose?: "just-watching" | "will-tattoo";
     studioLocation: string;
   };
@@ -97,10 +103,12 @@ const initialState: BookingState = {
     phone: "",
     email: "",
     instagram: "",
+    birthDate: "",
   },
   geolocation: null,
   companion: {
     hasCompanion: false,
+    companionCount: 0,
     companionPurpose: undefined,
     studioLocation: "",
   },

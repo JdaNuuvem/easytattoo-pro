@@ -95,9 +95,9 @@ export function TattooSize() {
   const sizeOptions = [
     {
       id: "fixed",
-      name: "Tamanho Pequeno",
-      description: "Ideal para tatuagens delicadas e minimalistas",
-      size: "Ate 5x5cm",
+      name: "Tamanho Mínimo",
+      description: "Ideal para tatuagens delicadas e minimalistas (de 1x1 até 5x5)",
+      size: "5x5cm",
       price:
         pricingConfig.priceTable.find(
           (entry) => entry.width === 5 && entry.height === 5
@@ -269,7 +269,7 @@ export function TattooSize() {
         </Button>
         <div className="flex items-center gap-4">
           <PriceEstimate />
-          <Button onClick={goToNextStep}>Proximo</Button>
+          <Button onClick={goToNextStep}>Próximo</Button>
         </div>
       </div>
     </div>

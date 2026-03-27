@@ -13,13 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Text } from "@/components/ui/typography";
-import { Upload, Save, MessageCircle, Check, X, Mail } from "lucide-react";
+import { Upload, Save, MessageCircle, Check, X, Mail, CreditCard, Calendar } from "lucide-react";
+import { GoogleIcon } from "@/components/ui/google-icon";
+import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import { BODY_LOCATIONS, SHADING_OPTIONS } from "@/lib/constants";
 
 interface Profile {
   name: string;
@@ -31,7 +31,7 @@ interface Profile {
   pixName: string;
   pixBank: string;
   acceptsCompanion: boolean;
-  maxDailyHours: number;
+  maxCompanions: number;
   evolutionApiUrl: string;
   evolutionApiKey: string;
   evolutionInstanceName: string;
@@ -40,8 +40,9 @@ interface Profile {
   smtpUser: string;
   smtpPass: string;
   smtpFrom: string;
-  enabledBodyLocations: string[];
-  enabledShadingOptions: string[];
+  paymentMethods: string[];
+  googleCalendarConnected: boolean;
+  googleCalendarId: string;
 }
 
 const defaultProfile: Profile = {
@@ -54,7 +55,7 @@ const defaultProfile: Profile = {
   pixName: "",
   pixBank: "",
   acceptsCompanion: false,
-  maxDailyHours: 8,
+  maxCompanions: 1,
   evolutionApiUrl: "",
   evolutionApiKey: "",
   evolutionInstanceName: "",
@@ -63,8 +64,9 @@ const defaultProfile: Profile = {
   smtpUser: "",
   smtpPass: "",
   smtpFrom: "",
-  enabledBodyLocations: BODY_LOCATIONS.map((l) => l.id),
-  enabledShadingOptions: SHADING_OPTIONS.map((s) => s.id),
+  paymentMethods: ["PIX"],
+  googleCalendarConnected: false,
+  googleCalendarId: "",
 };
 
 export default function PerfilPage() {
@@ -74,10 +76,17 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [testingWhatsapp, setTestingWhatsapp] = useState(false);
   const [testingSmtp, setTestingSmtp] = useState(false);
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchProfile();
+
+    // Check if returning from Google Calendar OAuth
+    const googleToken = localStorage.getItem("google_access_token");
+    if (googleToken) {
+      setProfile((prev) => ({ ...prev, googleCalendarConnected: true }));
+    }
   }, []);
 
   async function fetchProfile() {
@@ -94,7 +103,7 @@ export default function PerfilPage() {
         pixName: data.pixName ?? "",
         pixBank: data.pixBank ?? "",
         acceptsCompanion: data.acceptsCompanion ?? false,
-        maxDailyHours: data.maxDailyHours ?? 8,
+        maxCompanions: data.maxCompanions ?? 1,
         evolutionApiUrl: data.evolutionApiUrl ?? "",
         evolutionApiKey: data.evolutionApiKey ?? "",
         evolutionInstanceName: data.evolutionInstanceName ?? "",
@@ -103,8 +112,9 @@ export default function PerfilPage() {
         smtpUser: data.smtpUser ?? "",
         smtpPass: data.smtpPass ?? "",
         smtpFrom: data.smtpFrom ?? "",
-        enabledBodyLocations: data.enabledBodyLocations ?? BODY_LOCATIONS.map((l) => l.id),
-        enabledShadingOptions: data.enabledShadingOptions ?? SHADING_OPTIONS.map((s) => s.id),
+        paymentMethods: data.paymentMethods ?? ["PIX"],
+        googleCalendarConnected: data.googleCalendarConnected ?? false,
+        googleCalendarId: data.googleCalendarId ?? "",
       });
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
@@ -125,7 +135,7 @@ export default function PerfilPage() {
         pixName: profile.pixName,
         pixBank: profile.pixBank,
         acceptsCompanion: profile.acceptsCompanion,
-        maxDailyHours: profile.maxDailyHours,
+        maxCompanions: profile.maxCompanions,
         evolutionApiUrl: profile.evolutionApiUrl,
         evolutionApiKey: profile.evolutionApiKey,
         evolutionInstanceName: profile.evolutionInstanceName,
@@ -134,8 +144,8 @@ export default function PerfilPage() {
         smtpUser: profile.smtpUser,
         smtpPass: profile.smtpPass,
         smtpFrom: profile.smtpFrom,
-        enabledBodyLocations: profile.enabledBodyLocations,
-        enabledShadingOptions: profile.enabledShadingOptions,
+        paymentMethods: profile.paymentMethods,
+        googleCalendarId: profile.googleCalendarId,
       });
       toast({
         title: "Perfil atualizado",
@@ -199,21 +209,35 @@ export default function PerfilPage() {
     }
   }
 
-  function toggleBodyLocation(id: string) {
-    setProfile((prev) => ({
-      ...prev,
-      enabledBodyLocations: prev.enabledBodyLocations.includes(id)
-        ? prev.enabledBodyLocations.filter((l) => l !== id)
-        : [...prev.enabledBodyLocations, id],
-    }));
+  function connectGoogleCalendar() {
+    setConnectingGoogle(true);
+    redirectToGoogleAuth("artist-calendar", [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar.readonly",
+    ]);
   }
 
-  function toggleShadingOption(id: string) {
+  async function disconnectGoogleCalendar() {
+    try {
+      await api.post("/users/profile/google-calendar/disconnect");
+      setProfile((prev) => ({
+        ...prev,
+        googleCalendarConnected: false,
+        googleCalendarId: "",
+      }));
+      localStorage.removeItem("google_access_token");
+      toast({ title: "Google Agenda desconectado" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Erro ao desconectar" });
+    }
+  }
+
+  function togglePaymentMethod(method: string) {
     setProfile((prev) => ({
       ...prev,
-      enabledShadingOptions: prev.enabledShadingOptions.includes(id)
-        ? prev.enabledShadingOptions.filter((s) => s !== id)
-        : [...prev.enabledShadingOptions, id],
+      paymentMethods: prev.paymentMethods.includes(method)
+        ? prev.paymentMethods.filter((m) => m !== method)
+        : [...prev.paymentMethods, method],
     }));
   }
 
@@ -332,14 +356,91 @@ export default function PerfilPage() {
                 </div>
                 <Switch checked={profile.acceptsCompanion} onCheckedChange={(checked) => updateField("acceptsCompanion", checked)} />
               </div>
-              <Separator className="bg-border" />
-              <div>
-                <Label>Maximo de Horas Diarias</Label>
-                <Input type="number" value={profile.maxDailyHours} onChange={(e) => updateField("maxDailyHours", Number(e.target.value))} className="bg-background border-border w-24" min={1} max={16} />
-              </div>
+              {profile.acceptsCompanion && (
+                <>
+                  <Separator className="bg-border" />
+                  <div>
+                    <Label>Máximo de Acompanhantes</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Quantas pessoas o cliente pode levar</p>
+                    <Input
+                      type="number"
+                      value={profile.maxCompanions}
+                      onChange={(e) => updateField("maxCompanions", Number(e.target.value))}
+                      className="bg-background border-border w-24"
+                      min={1}
+                      max={5}
+                    />
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Google Calendar */}
+        {isGoogleAuthConfigured() && <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-primary" />
+              Google Agenda
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Text className="text-xs text-muted-foreground">
+              Conecte sua conta Google para sincronizar seus agendamentos automaticamente
+              com o Google Agenda. Novos agendamentos serão adicionados e horários ocupados
+              serão bloqueados automaticamente.
+            </Text>
+
+            {profile.googleCalendarConnected ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 rounded-sm bg-emerald-500/5 border border-emerald-500/20">
+                  <GoogleIcon />
+                  <div className="flex-1">
+                    <Text className="text-sm font-medium text-emerald-600">Conectado</Text>
+                    {profile.googleCalendarId && (
+                      <Text className="text-xs text-muted-foreground">{profile.googleCalendarId}</Text>
+                    )}
+                  </div>
+                  <Check className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Sincronizar novos agendamentos</Label>
+                    <p className="text-xs text-muted-foreground">Adiciona automaticamente ao Google Agenda</p>
+                  </div>
+                  <Switch checked={true} disabled />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Bloquear horários ocupados</Label>
+                    <p className="text-xs text-muted-foreground">Impede agendamentos em horários com eventos</p>
+                  </div>
+                  <Switch checked={true} disabled />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive border-destructive/30"
+                  onClick={disconnectGoogleCalendar}
+                >
+                  <X className="w-3 h-3 mr-2" />
+                  Desconectar
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full flex items-center gap-3"
+                onClick={connectGoogleCalendar}
+                disabled={connectingGoogle}
+              >
+                <GoogleIcon />
+                {connectingGoogle ? "Conectando..." : "Conectar Google Agenda"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>}
 
         {/* Evolution API - WhatsApp */}
         <Card className="border-border">
@@ -411,31 +512,34 @@ export default function PerfilPage() {
           </CardContent>
         </Card>
 
-        {/* Body Locations - Toggle */}
+        {/* Payment Methods */}
         <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-sm">Localizacoes do Corpo</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary" />
+              Formas de Pagamento
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Text className="text-xs text-muted-foreground">
-              Selecione as localizacoes que voce atende. Desmarque as que nao deseja oferecer.
+              Selecione as formas de pagamento que você aceita para o restante do valor (após o sinal).
             </Text>
             <div className="flex flex-wrap gap-2">
-              {BODY_LOCATIONS.map((loc) => {
-                const isEnabled = profile.enabledBodyLocations.includes(loc.id);
+              {["PIX", "Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Transferência Bancária"].map((method) => {
+                const isEnabled = profile.paymentMethods.includes(method);
                 return (
                   <button
-                    key={loc.id}
+                    key={method}
                     type="button"
-                    onClick={() => toggleBodyLocation(loc.id)}
+                    onClick={() => togglePaymentMethod(method)}
                     className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors border ${
                       isEnabled
                         ? "bg-primary/10 text-primary border-primary/30"
-                        : "bg-muted text-muted-foreground border-border line-through"
+                        : "bg-muted text-muted-foreground border-border"
                     }`}
                   >
                     {isEnabled ? <Check className="w-3 h-3 inline mr-1" /> : <X className="w-3 h-3 inline mr-1" />}
-                    {loc.name}
+                    {method}
                   </button>
                 );
               })}
@@ -443,37 +547,6 @@ export default function PerfilPage() {
           </CardContent>
         </Card>
 
-        {/* Shading Options - Toggle */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-sm">Opcoes de Sombreamento</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Text className="text-xs text-muted-foreground">
-              Selecione os tipos de sombreamento que voce oferece.
-            </Text>
-            <div className="flex flex-wrap gap-2">
-              {SHADING_OPTIONS.map((opt) => {
-                const isEnabled = profile.enabledShadingOptions.includes(opt.id);
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => toggleShadingOption(opt.id)}
-                    className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors border ${
-                      isEnabled
-                        ? "bg-primary/10 text-primary border-primary/30"
-                        : "bg-muted text-muted-foreground border-border line-through"
-                    }`}
-                  >
-                    {isEnabled ? <Check className="w-3 h-3 inline mr-1" /> : <X className="w-3 h-3 inline mr-1" />}
-                    {opt.name}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

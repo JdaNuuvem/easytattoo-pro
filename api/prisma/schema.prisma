@@ -48,24 +48,38 @@ enum UserRole {
 }
 
 model User {
-  id                  String          @id @default(uuid())
-  email               String          @unique
-  password            String
-  name                String
-  role                UserRole        @default(ARTIST)
-  phone               String?
-  instagram           String?
-  bio                 String?
-  pixKey              String?
-  pixName             String?
-  pixBank             String?
-  depositPercentage   Float           @default(20)
-  profilePhoto        String?
-  coverPhoto          String?
-  acceptsCompanion    Boolean         @default(true)
-  maxDailyHours       Int             @default(8)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                    String          @id @default(uuid())
+  email                 String          @unique
+  password              String?
+  name                  String
+  role                  UserRole        @default(ARTIST)
+  phone                 String?
+  instagram             String?
+  bio                   String?
+  pixKey                String?
+  pixName               String?
+  pixBank               String?
+  depositPercentage     Float           @default(20)
+  profilePhoto          String?
+  coverPhoto            String?
+  acceptsCompanion      Boolean         @default(true)
+  maxCompanions         Int             @default(1)
+  maxDailyHours         Int             @default(8)
+  googleId              String?         @unique
+  googleAccessToken     String?
+  googleRefreshToken    String?
+  googleCalendarId      String?
+  paymentMethods        String[]        @default(["PIX"])
+  evolutionApiUrl       String?
+  evolutionApiKey       String?
+  evolutionInstanceName String?
+  smtpHost              String?
+  smtpPort              Int?
+  smtpUser              String?
+  smtpPass              String?
+  smtpFrom              String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   studios             Studio[]
   bookings            Booking[]

@@ -1,9 +1,13 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3090";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL && typeof window !== "undefined") {
+  console.warn("[EasyTattoo] NEXT_PUBLIC_API_URL não configurado. Usando localhost:3090 como fallback.");
+}
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL || "http://localhost:3090",
   headers: { "Content-Type": "application/json" },
 });
 

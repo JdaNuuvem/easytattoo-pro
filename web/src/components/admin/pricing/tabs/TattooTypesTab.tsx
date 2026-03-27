@@ -1,183 +1,125 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "../schema";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Text } from "@/components/ui/typography";
+import { TATTOO_TYPES } from "@/lib/constants";
 
 interface TattooTypesTabProps {
   form: UseFormReturn<FormValues>;
 }
 
 export function TattooTypesTab({ form }: TattooTypesTabProps) {
-  const addNewType = () => {
-    const currentTypes = form.getValues("tattooTypes");
-    form.setValue("tattooTypes", [
-      ...currentTypes,
-      {
-        id: `type-${Date.now()}`,
-        name: "",
-        description: "",
-        basePrice: 0,
-        baseTime: 0,
-      },
-    ]);
+  const currentTypes = form.watch("tattooTypes");
+
+  const isEnabled = (id: string) =>
+    currentTypes.some((t) => t.id === id);
+
+  const getType = (id: string) =>
+    currentTypes.find((t) => t.id === id);
+
+  const toggleType = (id: string, name: string, description: string) => {
+    if (isEnabled(id)) {
+      form.setValue(
+        "tattooTypes",
+        currentTypes.filter((t) => t.id !== id)
+      );
+    } else {
+      form.setValue("tattooTypes", [
+        ...currentTypes,
+        { id, name, description, basePrice: 50, baseTime: 60 },
+      ]);
+    }
   };
 
-  const removeType = (index: number) => {
-    const currentTypes = form.getValues("tattooTypes");
+  const updateField = (
+    id: string,
+    field: "basePrice" | "baseTime",
+    value: number
+  ) => {
     form.setValue(
       "tattooTypes",
-      currentTypes.filter((_, i) => i !== index)
+      currentTypes.map((t) =>
+        t.id === id ? { ...t, [field]: value } : t
+      )
     );
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div>
         <h2 className="text-lg font-mono uppercase tracking-wider font-semibold">
           Tipos de Tatuagem
         </h2>
-        <Button
-          type="button"
-          onClick={addNewType}
-          variant="outline"
-          size="sm"
-          className="border-border"
-        >
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Adicionar Tipo
-        </Button>
+        <Text className="text-xs text-muted-foreground mt-1">
+          Ative os tipos de tatuagem que você oferece e defina o preço base e tempo estimado.
+        </Text>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {form.watch("tattooTypes").map((_, index) => (
-          <Card key={index} className="border-border">
-            <CardHeader className="flex flex-row items-start justify-between pb-3">
-              <FormField
-                control={form.control}
-                name={`tattooTypes.${index}.name`}
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Nome do tipo"
-                        className="bg-background border-border text-lg font-semibold"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeType(index)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 ml-2"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name={`tattooTypes.${index}.description`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descricao</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Descricao do tipo"
-                        className="bg-background border-border"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name={`tattooTypes.${index}.basePrice`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preco Base (R$)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                          className="bg-background border-border"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`tattooTypes.${index}.baseTime`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tempo Base (min)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                          className="bg-background border-border"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <div className="space-y-3">
+        {TATTOO_TYPES.map((type) => {
+          const enabled = isEnabled(type.id);
+          const data = getType(type.id);
 
-      {form.watch("tattooTypes").length === 0 && (
-        <Card className="border-dashed border-border">
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Nenhum tipo de tatuagem cadastrado
-            </p>
-            <Button
-              type="button"
-              onClick={addNewType}
-              variant="outline"
-              size="sm"
-              className="border-border"
+          return (
+            <div
+              key={type.id}
+              className={`rounded-lg border-2 p-4 transition-all ${
+                enabled
+                  ? "border-primary/30 bg-primary/[0.02]"
+                  : "border-border bg-card opacity-60"
+              }`}
             >
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Adicionar Primeiro Tipo
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={enabled}
+                    onCheckedChange={() => toggleType(type.id, type.name, type.description)}
+                  />
+                  <div>
+                    <span className="font-mono uppercase tracking-wider font-semibold text-sm">
+                      {type.name}
+                    </span>
+                    <p className="text-xs text-muted-foreground">{type.description}</p>
+                  </div>
+                </div>
+
+                {enabled && (
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">R$</Label>
+                      <Input
+                        type="number"
+                        value={data?.basePrice ?? 0}
+                        onChange={(e) =>
+                          updateField(type.id, "basePrice", Number(e.target.value))
+                        }
+                        className="w-20 h-8 text-xs bg-background border-border"
+                        min={0}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">min</Label>
+                      <Input
+                        type="number"
+                        value={data?.baseTime ?? 0}
+                        onChange={(e) =>
+                          updateField(type.id, "baseTime", Number(e.target.value))
+                        }
+                        className="w-20 h-8 text-xs bg-background border-border"
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

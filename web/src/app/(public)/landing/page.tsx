@@ -37,45 +37,45 @@ const features = [
     icon: Calendar,
     title: "Agendamento Online",
     description:
-      "Sistema completo de agendamento com confirmacao automatica e notificacoes",
+      "Clientes agendam direto pelo seu link, com confirmação automática e notificações",
   },
   {
     icon: Calculator,
-    title: "Calculadora de Precos",
+    title: "Calculadora de Preços",
     description:
-      "Calcule precos automaticamente com base em tamanho, localizacao e estilo",
+      "Calcule preços automaticamente com base em tamanho, localização e estilo",
   },
   {
     icon: Image,
-    title: "Portfolio Digital",
+    title: "Portfólio Digital",
     description:
       "Galeria profissional para exibir seus melhores trabalhos aos clientes",
   },
   {
     icon: Users,
-    title: "Gestao de Clientes",
+    title: "Gestão de Clientes",
     description:
-      "Historico completo de cada cliente com preferencias e agendamentos",
+      "Histórico completo de cada cliente com preferências e agendamentos",
   },
   {
     icon: BarChart3,
     title: "Dashboard Inteligente",
     description:
-      "Metricas em tempo real sobre receita, agendamentos e desempenho",
+      "Métricas em tempo real sobre receita, agendamentos e desempenho",
   },
   {
     icon: Link2,
     title: "Link Personalizado",
     description:
-      "Seu link unico para compartilhar com clientes e redes sociais",
+      "Seu link único para compartilhar com clientes e redes sociais",
   },
 ];
 
 const steps = [
-  { number: "01", title: "Crie sua conta", description: "Cadastro rapido e gratuito" },
-  { number: "02", title: "Configure seus precos", description: "Defina sua tabela de precos personalizada" },
-  { number: "03", title: "Compartilhe seu link", description: "Envie seu link personalizado para clientes" },
-  { number: "04", title: "Receba agendamentos", description: "Gerencie tudo pelo dashboard" },
+  { number: "01", title: "Crie sua conta", description: "Cadastro rápido e gratuito para tatuadores" },
+  { number: "02", title: "Configure seus preços", description: "Defina sua tabela de preços personalizada" },
+  { number: "03", title: "Compartilhe seu link", description: "Envie seu link para clientes e redes sociais" },
+  { number: "04", title: "Receba agendamentos", description: "Clientes agendam direto pelo seu link" },
 ];
 
 export default function LandingPage() {
@@ -94,9 +94,9 @@ export default function LandingPage() {
                 Sistema profissional para tatuadores
               </p>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-                Gerencie seu estudio de tatuagem com agendamento online,
-                calculadora de precos, portfolio digital e muito mais. Tudo em
-                um so lugar.
+                Gerencie seu estúdio de tatuagem com agendamento online,
+                calculadora de preços, portfólio digital e muito mais. Seus
+                clientes agendam direto pelo seu link personalizado.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/register">
@@ -108,13 +108,13 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/t/demo-artist">
+                <Link href="/login">
                   <Button
                     variant="outline"
                     size="lg"
                     className="border-border hover:border-primary/50 font-mono uppercase tracking-wider text-base px-8"
                   >
-                    Ver Demo
+                    Já tenho conta
                   </Button>
                 </Link>
               </div>
@@ -129,10 +129,10 @@ export default function LandingPage() {
           <FadeInUp>
             <div className="text-center mb-16">
               <h2 className="text-2xl sm:text-3xl font-mono uppercase tracking-wider font-bold text-foreground mb-4">
-                Tudo que voce precisa
+                Tudo que você precisa
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Ferramentas profissionais para gerenciar seu estudio de
+                Ferramentas profissionais para gerenciar seu estúdio de
                 tatuagem
               </p>
             </div>
@@ -172,8 +172,8 @@ export default function LandingPage() {
                 Como Funciona
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Comece em minutos e transforme a forma como voce gerencia seu
-                estudio
+                Comece em minutos e transforme a forma como você gerencia seu
+                estúdio
               </p>
             </div>
           </FadeInUp>
@@ -244,11 +244,11 @@ export default function LandingPage() {
           <FadeInUp>
             <div className="text-center max-w-2xl mx-auto">
               <h2 className="text-2xl sm:text-3xl font-mono uppercase tracking-wider font-bold text-foreground mb-4">
-                Pronto para profissionalizar seu estudio?
+                Pronto para profissionalizar seu estúdio?
               </h2>
               <p className="text-muted-foreground mb-8">
-                Junte-se a centenas de tatuadores que ja usam o EasyTattoo Pro
-                para gerenciar seus estudios.
+                Junte-se a centenas de tatuadores que já usam o EasyTattoo Pro
+                para gerenciar seus estúdios.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/register">
@@ -297,13 +297,13 @@ export default function LandingPage() {
                 href="/login"
                 className="hover:text-primary transition-colors"
               >
-                Login
+                Login Tatuador
               </Link>
               <Link
                 href="/register"
                 className="hover:text-primary transition-colors"
               >
-                Cadastro
+                Criar Conta
               </Link>
             </div>
           </div>

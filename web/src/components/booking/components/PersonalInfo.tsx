@@ -23,11 +23,12 @@ import { api } from "@/lib/api";
 import { MapPin } from "lucide-react";
 
 const personalInfoSchema = z.object({
-  firstName: z.string().min(1, "Nome e obrigatorio"),
-  lastName: z.string().min(1, "Sobrenome e obrigatorio"),
-  phone: z.string().min(10, "Telefone deve ter pelo menos 10 digitos"),
-  email: z.string().email("Email invalido"),
+  firstName: z.string().min(1, "Nome é obrigatório"),
+  lastName: z.string().min(1, "Sobrenome é obrigatório"),
+  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  email: z.string().email("Email inválido"),
   instagram: z.string().default(""),
+  birthDate: z.string().min(1, "Data de nascimento é obrigatória"),
 });
 
 type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
@@ -46,6 +47,7 @@ export function PersonalInfo() {
       phone: personalInfo.phone,
       email: personalInfo.email,
       instagram: personalInfo.instagram ?? "",
+      birthDate: personalInfo.birthDate ?? "",
     },
   });
 
@@ -63,6 +65,7 @@ export function PersonalInfo() {
               phone: profile.phone || "",
               email: profile.email || data.email || "",
               instagram: profile.instagram || "",
+              birthDate: profile.birthDate || "",
             });
             setAutoFilled(true);
           }
@@ -80,6 +83,7 @@ export function PersonalInfo() {
       phone: data.phone,
       email: data.email,
       instagram: data.instagram ?? "",
+      birthDate: data.birthDate,
     });
     if (geoLocation) {
       updateGeolocation({
@@ -97,7 +101,7 @@ export function PersonalInfo() {
     <Form {...form}>
       <form onSubmit={onSubmit} className="space-y-6">
         <Text className="text-muted-foreground">
-          Para comecarmos, precisamos de algumas informacoes basicas sobre voce.
+          Para começarmos, precisamos de algumas informações básicas sobre você.
         </Text>
 
         {autoFilled && (
@@ -180,6 +184,24 @@ export function PersonalInfo() {
 
         <FormField
           control={form.control}
+          name="birthDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data de Nascimento</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="date"
+                  className="bg-card border-border focus-visible:ring-primary focus-visible:border-primary"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="instagram"
           render={({ field }) => (
             <FormItem>
@@ -200,7 +222,7 @@ export function PersonalInfo() {
         {geoLoading && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="h-3 w-3 animate-pulse" />
-            Detectando sua localizacao...
+            Detectando sua localização...
           </div>
         )}
         {geoLocation && (
@@ -208,7 +230,7 @@ export function PersonalInfo() {
             <MapPin className="h-3 w-3 shrink-0" />
             {geoLocation.city && geoLocation.state
               ? `${geoLocation.city}, ${geoLocation.state}`
-              : "Localizacao detectada"}
+              : "Localização detectada"}
           </div>
         )}
 

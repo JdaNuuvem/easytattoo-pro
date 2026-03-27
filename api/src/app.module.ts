@@ -12,6 +12,9 @@ import { UploadModule } from './upload/upload.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { MyBookingsModule } from './my-bookings/my-bookings.module';
+import { PaymentsModule } from './payments/payments.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { LeadsModule } from './leads/leads.module';
 
 @Module({
   imports: [
@@ -33,6 +36,9 @@ import { MyBookingsModule } from './my-bookings/my-bookings.module';
     ScheduleModule,
     AnalyticsModule,
     MyBookingsModule,
+    PaymentsModule,
+    NotificationsModule,
+    LeadsModule,
   ],
 })
 export class AppModule {}

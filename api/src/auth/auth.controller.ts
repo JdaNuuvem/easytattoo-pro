@@ -16,6 +16,7 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleCallbackDto } from './dto/google-callback.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -39,6 +40,15 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('google/callback')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Authenticate with Google OAuth' })
+  @ApiResponse({ status: 200, description: 'Google auth successful' })
+  @ApiResponse({ status: 400, description: 'Invalid authorization code' })
+  async googleCallback(@Body() dto: GoogleCallbackDto) {
+    return this.authService.googleCallback(dto);
   }
 
   @Get('me')

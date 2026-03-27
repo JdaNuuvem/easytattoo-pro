@@ -124,12 +124,12 @@ export function References() {
           </div>
           <div className="space-y-1">
             <Text className="text-sm font-semibold text-foreground">
-              Informacao importante
+              Informação importante
             </Text>
             <Text className="text-sm text-muted-foreground leading-relaxed">
-              Nao e obrigatorio enviar as 3 imagens. Envie quantas referencias achar necessario.
-              Este orcamento e para <strong className="text-foreground">1 tatuagem apenas</strong>. Caso deseje mais de uma tatuagem,
-              faca um novo orcamento para cada uma.
+              Não é obrigatório enviar as 3 imagens. Envie quantas referências achar necessário.
+              Este orçamento é para <strong className="text-foreground">1 tatuagem apenas</strong>. Caso deseje mais de uma tatuagem,
+              faça um novo orçamento para cada uma.
             </Text>
           </div>
         </div>

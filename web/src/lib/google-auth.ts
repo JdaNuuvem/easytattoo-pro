@@ -1,17 +1,24 @@
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 /**
+ * Checks if Google OAuth is configured.
+ */
+export function isGoogleAuthConfigured(): boolean {
+  return !!GOOGLE_CLIENT_ID;
+}
+
+/**
  * Redirects user to Google OAuth consent screen.
- * @param state - Identifies the flow: "login", "register", or "booking-calendar"
+ * @param state - Identifies the flow: "login", "register", "booking-calendar", or "artist-calendar"
  * @param extraScopes - Additional scopes beyond openid/email/profile
+ * @returns true if redirect initiated, false if not configured
  */
 export function redirectToGoogleAuth(
   state: string,
   extraScopes: string[] = []
-) {
+): boolean {
   if (!GOOGLE_CLIENT_ID) {
-    console.warn("Google Client ID not configured");
-    return;
+    return false;
   }
 
   const baseScopes = ["openid", "email", "profile"];
@@ -29,4 +36,6 @@ export function redirectToGoogleAuth(
     `&access_type=offline` +
     `&prompt=consent` +
     `&state=${state}`;
+
+  return true;
 }

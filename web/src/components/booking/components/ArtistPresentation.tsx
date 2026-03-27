@@ -22,6 +22,10 @@ interface ArtistData {
   pixKey?: string;
   pixName?: string;
   pixBank?: string;
+  acceptsCompanion?: boolean;
+  maxCompanions?: number;
+  paymentMethods?: string[];
+  studios?: Array<{ id: string; name: string; address?: string }>;
 }
 
 const STYLE_IMAGES: Record<string, string> = {
@@ -50,7 +54,7 @@ function getStyleImage(style: string): string {
 
 export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
   const { goToNextStep } = useBookingNavigation();
-  const { updateArtistInfo } = useBookingStore();
+  const { updateArtistInfo, updatePricingConfig } = useBookingStore();
   const [artist, setArtist] = useState<ArtistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -75,15 +79,28 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
           pixKey: data.pixKey || undefined,
           pixName: data.pixName || undefined,
           pixBank: data.pixBank || undefined,
+          acceptsCompanion: data.acceptsCompanion ?? true,
+          maxCompanions: data.maxCompanions ?? 1,
+          paymentMethods: data.paymentMethods || [],
+          studios: data.studios || [],
         });
+
+        // Fetch artist's pricing config
+        try {
+          const { data: pricingData } = await api.get(`/pricing/${artistId}`);
+          if (pricingData) {
+            updatePricingConfig(pricingData);
+          }
+        } catch {
+          // Use default pricing config
+        }
       } catch (error) {
-        console.error("Failed to fetch artist data:", error);
         setArtist({
           id: artistId,
-          name: "Tatuador",
+          name: "",
           profileImage: "",
-          bio: "Especializado em fineline e blackwork, com mais de 5 anos de experiencia em tatuagens minimalistas e delicadas.",
-          styles: ["Fineline", "Blackwork", "Realismo", "Cobertura"],
+          bio: "",
+          styles: [],
           portfolio: [],
         });
       } finally {
@@ -106,6 +123,10 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
       pixKey: artist?.pixKey,
       pixName: artist?.pixName,
       pixBank: artist?.pixBank,
+      acceptsCompanion: artist?.acceptsCompanion,
+      maxCompanions: artist?.maxCompanions,
+      paymentMethods: artist?.paymentMethods,
+      studios: artist?.studios,
     });
     goToNextStep();
   };
@@ -121,6 +142,25 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
             <div className="h-16 bg-muted rounded-sm" />
             <div className="h-16 bg-muted rounded-sm" />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!artist?.name) {
+    return (
+      <div className="space-y-6 text-center py-12">
+        <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center">
+          <span className="text-3xl text-muted-foreground">?</span>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-mono uppercase tracking-wider text-foreground">
+            Tatuador não encontrado
+          </h2>
+          <Text className="text-muted-foreground">
+            Não foi possível carregar as informações deste tatuador.
+            Verifique se o link está correto.
+          </Text>
         </div>
       </div>
     );
@@ -251,7 +291,7 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
       )}
 
       <Button variant="default" className="w-full" onClick={handleContinue}>
-        Fazer um orcamento
+        Fazer um orçamento
       </Button>
     </div>
   );

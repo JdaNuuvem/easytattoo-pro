@@ -26,11 +26,11 @@ import { useToast } from "@/hooks/use-toast";
 import { login, getHomeRouteForRole } from "@/lib/auth";
 import Link from "next/link";
 import { GoogleIcon } from "@/components/ui/google-icon";
-import { redirectToGoogleAuth } from "@/lib/google-auth";
+import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
 
 const loginSchema = z.object({
-  email: z.string().email("Email invalido"),
-  password: z.string().min(6, "A senha deve ter no minimo 6 caracteres"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -126,27 +126,40 @@ export default function LoginPage() {
           </form>
         </Form>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
-          </div>
-        </div>
+        {isGoogleAuthConfigured() && (
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">ou</span>
+              </div>
+            </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full flex items-center gap-3"
-          onClick={() => redirectToGoogleAuth("login")}
-        >
-          <GoogleIcon />
-          Entrar com Google
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center gap-3"
+              onClick={() => {
+                const ok = redirectToGoogleAuth("login");
+                if (!ok) {
+                  toast({
+                    variant: "destructive",
+                    title: "Google não configurado",
+                    description: "O login via Google não está disponível no momento.",
+                  });
+                }
+              }}
+            >
+              <GoogleIcon />
+              Entrar com Google
+            </Button>
+          </>
+        )}
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Nao tem uma conta?{" "}
+          Não tem uma conta?{" "}
           <Link
             href="/register"
             className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"

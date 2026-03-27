@@ -1,3 +1,8 @@
+/**
+ * Configuração padrão de preços - usada como estado inicial do store
+ * antes de carregar a configuração real do artista via API.
+ * NÃO são dados fake - são defaults razoáveis que serão substituídos.
+ */
 import {
   BodyLocation,
   ColorOption,
@@ -47,21 +52,31 @@ export const mockPriceTable: PriceTableEntry[] = [
 ];
 
 export const mockBodyLocations: BodyLocation[] = [
-  { id: "arm", name: "Braco", description: "Parte externa ou interna do braco", additionalPrice: 0, additionalTime: 0 },
-  { id: "leg", name: "Perna", description: "Parte externa ou interna da perna", additionalPrice: 0, additionalTime: 0 },
-  { id: "hand", name: "Mao", description: "Regiao da mao e dedos", additionalPrice: 50, additionalTime: 30 },
-  { id: "foot", name: "Pe", description: "Regiao do pe e dedos", additionalPrice: 50, additionalTime: 30 },
-  { id: "knee", name: "Joelho", description: "Regiao do joelho", additionalPrice: 50, additionalTime: 30 },
-  { id: "elbow", name: "Cotovelo", description: "Regiao do cotovelo", additionalPrice: 50, additionalTime: 30 },
-  { id: "neck", name: "Pescoco", description: "Regiao do pescoco", additionalPrice: 100, additionalTime: 45 },
-  { id: "nape", name: "Nuca", description: "Regiao da nuca", additionalPrice: 75, additionalTime: 30 },
-  { id: "face", name: "Rosto", description: "Regiao facial", additionalPrice: 150, additionalTime: 60 },
-  { id: "head", name: "Cabeca", description: "Regiao do couro cabeludo", additionalPrice: 100, additionalTime: 45 },
-  { id: "intimate", name: "Partes Intimas", description: "Areas intimas - consulte o tatuador", additionalPrice: 200, additionalTime: 60 },
-  { id: "back", name: "Costas", description: "Regiao das costas", additionalPrice: 100, additionalTime: 45 },
-  { id: "chest", name: "Peito", description: "Regiao do peito", additionalPrice: 100, additionalTime: 45 },
-  { id: "ribs", name: "Costela", description: "Regiao das costelas", additionalPrice: 150, additionalTime: 60 },
-  { id: "sternum", name: "Esterno", description: "Regiao do esterno entre os seios", additionalPrice: 150, additionalTime: 60 },
+  { id: "arm", name: "Braço", description: "Escolha a região do braço", additionalPrice: 0, additionalTime: 0 },
+  { id: "arm-forearm", name: "Antebraço", description: "Região do antebraço", additionalPrice: 0, additionalTime: 0, parentId: "arm" },
+  { id: "arm-biceps", name: "Bíceps", description: "Região do bíceps", additionalPrice: 0, additionalTime: 0, parentId: "arm" },
+  { id: "arm-triceps", name: "Tríceps", description: "Região do tríceps", additionalPrice: 0, additionalTime: 0, parentId: "arm" },
+  { id: "leg", name: "Perna", description: "Escolha a região da perna", additionalPrice: 0, additionalTime: 0 },
+  { id: "leg-thigh", name: "Coxa", description: "Região da coxa", additionalPrice: 0, additionalTime: 0, parentId: "leg" },
+  { id: "leg-shin", name: "Canela", description: "Região da canela", additionalPrice: 0, additionalTime: 0, parentId: "leg" },
+  { id: "leg-calf", name: "Panturrilha", description: "Região da panturrilha", additionalPrice: 0, additionalTime: 0, parentId: "leg" },
+  { id: "hand", name: "Mão", description: "Região da mão", additionalPrice: 50, additionalTime: 30 },
+  { id: "fingers", name: "Dedos", description: "Região dos dedos", additionalPrice: 50, additionalTime: 30 },
+  { id: "foot", name: "Pé", description: "Região do pé", additionalPrice: 50, additionalTime: 30 },
+  { id: "knee", name: "Joelho", description: "Região do joelho", additionalPrice: 50, additionalTime: 30 },
+  { id: "elbow", name: "Cotovelo", description: "Região do cotovelo", additionalPrice: 50, additionalTime: 30 },
+  { id: "neck", name: "Pescoço", description: "Região do pescoço", additionalPrice: 100, additionalTime: 45 },
+  { id: "nape", name: "Nuca", description: "Região da nuca", additionalPrice: 75, additionalTime: 30 },
+  { id: "face", name: "Rosto", description: "Região facial", additionalPrice: 150, additionalTime: 60 },
+  { id: "head", name: "Cabeça", description: "Região do couro cabeludo", additionalPrice: 100, additionalTime: 45 },
+  { id: "intimate", name: "Partes Íntimas", description: "Áreas íntimas - consulte o tatuador", additionalPrice: 200, additionalTime: 60 },
+  { id: "back", name: "Costas", description: "Escolha a região das costas", additionalPrice: 100, additionalTime: 45 },
+  { id: "back-cervical", name: "Cervical", description: "Região cervical (costas superior)", additionalPrice: 100, additionalTime: 45, parentId: "back" },
+  { id: "back-thoracic", name: "Torácica", description: "Região torácica (costas meio)", additionalPrice: 100, additionalTime: 45, parentId: "back" },
+  { id: "back-lumbar", name: "Lombar", description: "Região lombar (costas inferior)", additionalPrice: 100, additionalTime: 45, parentId: "back" },
+  { id: "chest", name: "Peito", description: "Região do peito", additionalPrice: 100, additionalTime: 45 },
+  { id: "ribs", name: "Costela", description: "Região das costelas", additionalPrice: 150, additionalTime: 60 },
+  { id: "sternum", name: "Esterno", description: "Região do esterno entre os seios", additionalPrice: 150, additionalTime: 60 },
 ];
 
 export const mockShadingOptions: ShadingOption[] = [

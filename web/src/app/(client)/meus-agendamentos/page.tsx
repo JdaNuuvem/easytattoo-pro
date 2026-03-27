@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Text } from "@/components/ui/typography";
+import { Search, Calendar, Loader2 } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -22,10 +27,6 @@ interface Booking {
     profilePhoto: string | null;
     instagram: string | null;
   };
-  studio: {
-    name: string;
-    address: string;
-  } | null;
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -42,7 +43,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     className: "bg-sky-100 text-sky-600 border-sky-300",
   },
   COMPLETED: {
-    label: "Concluido",
+    label: "Concluído",
     className: "bg-emerald-100 text-emerald-600 border-emerald-300",
   },
   CANCELLED: {
@@ -57,77 +58,83 @@ const tattooTypeLabels: Record<string, string> = {
   CLOSURE: "Fechamento",
 };
 
-function BookingSkeleton() {
-  return (
-    <Card className="border-border bg-card animate-pulse">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-muted" />
-          <div className="flex-1 space-y-3">
-            <div className="h-4 bg-muted rounded w-1/3" />
-            <div className="h-3 bg-muted rounded w-1/2" />
-            <div className="h-3 bg-muted rounded w-1/4" />
-          </div>
-          <div className="h-6 w-20 bg-muted rounded" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function MeusAgendamentosPage() {
+  const [phone, setPhone] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
 
-  useEffect(() => {
-    async function fetchBookings() {
-      try {
-        const { data } = await api.get("/my-bookings");
-        setBookings(data.bookings);
-      } catch {
-        // Error handled silently - empty state shown
-      } finally {
-        setLoading(false);
-      }
+  const handleSearch = async () => {
+    if (phone.length < 10) return;
+    setLoading(true);
+    setSearched(false);
+    try {
+      const { data } = await api.get(`/my-bookings/by-phone`, {
+        params: { phone: phone.replace(/\D/g, "") },
+      });
+      setBookings(Array.isArray(data) ? data : data.bookings || []);
+    } catch {
+      setBookings([]);
+    } finally {
+      setLoading(false);
+      setSearched(true);
     }
-    fetchBookings();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold font-mono uppercase tracking-wider text-primary">
-          Meus Agendamentos
-        </h2>
-        <div className="space-y-4">
-          <BookingSkeleton />
-          <BookingSkeleton />
-          <BookingSkeleton />
-        </div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold font-mono uppercase tracking-wider text-primary">
-        Meus Agendamentos
-      </h2>
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold font-mono uppercase tracking-wider text-primary">
+          Consultar Agendamentos
+        </h2>
+        <Text className="text-muted-foreground">
+          Digite seu telefone para consultar seus agendamentos
+        </Text>
+      </div>
 
-      {bookings.length === 0 ? (
-        <Card className="border-border bg-card">
+      <Card className="border-border bg-card max-w-md mx-auto">
+        <CardContent className="p-6 space-y-4">
+          <div>
+            <Label>Telefone (WhatsApp)</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(11) 99999-9999"
+              className="bg-background border-border"
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+          </div>
+          <Button
+            className="w-full"
+            onClick={handleSearch}
+            disabled={loading || phone.length < 10}
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Search className="w-4 h-4 mr-2" />
+            )}
+            Consultar
+          </Button>
+        </CardContent>
+      </Card>
+
+      {searched && bookings.length === 0 && (
+        <Card className="border-border bg-card max-w-md mx-auto">
           <CardContent className="p-12 text-center">
-            <div className="text-4xl mb-4">📋</div>
+            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">
-              Voce ainda nao tem agendamentos
+              Nenhum agendamento encontrado
             </h3>
-            <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              Para agendar uma tatuagem, acesse o link do seu tatuador
-              preferido. O agendamento aparecera aqui automaticamente.
-            </p>
+            <Text className="text-muted-foreground text-sm">
+              Não encontramos agendamentos para este telefone.
+              Verifique o número e tente novamente.
+            </Text>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {bookings.length > 0 && (
         <div className="space-y-4">
           {bookings.map((booking) => {
             const status = statusConfig[booking.status] || statusConfig.PENDING;
@@ -139,7 +146,6 @@ export default function MeusAgendamentosPage() {
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    {/* Artist avatar */}
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                       {booking.user.profilePhoto ? (
                         <img
@@ -154,17 +160,11 @@ export default function MeusAgendamentosPage() {
                       )}
                     </div>
 
-                    {/* Booking info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold truncate">
                           {booking.user.name}
                         </h3>
-                        {booking.user.instagram && (
-                          <span className="text-xs text-muted-foreground">
-                            @{booking.user.instagram}
-                          </span>
-                        )}
                       </div>
 
                       <p className="text-sm text-muted-foreground">
@@ -178,14 +178,10 @@ export default function MeusAgendamentosPage() {
                           {booking.scheduledDate
                             ? new Date(booking.scheduledDate).toLocaleDateString(
                                 "pt-BR",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                }
+                                { day: "2-digit", month: "short", year: "numeric" }
                               )
                             : "Aguardando agendamento"}
-                          {booking.scheduledTime && ` as ${booking.scheduledTime}`}
+                          {booking.scheduledTime && ` às ${booking.scheduledTime}`}
                         </span>
                       </div>
 
@@ -195,20 +191,16 @@ export default function MeusAgendamentosPage() {
                         </span>
                         <span className="text-xs">
                           {booking.depositPaid ? (
-                            <span className="text-emerald-600">
-                              Sinal pago
-                            </span>
+                            <span className="text-emerald-600">Sinal pago</span>
                           ) : (
                             <span className="text-amber-600">
-                              Sinal pendente (R${" "}
-                              {booking.depositAmount.toFixed(2)})
+                              Sinal pendente (R$ {booking.depositAmount.toFixed(2)})
                             </span>
                           )}
                         </span>
                       </div>
                     </div>
 
-                    {/* Status badge */}
                     <Badge
                       variant="outline"
                       className={`flex-shrink-0 ${status.className}`}

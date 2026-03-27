@@ -161,7 +161,7 @@ export function ShadingDetails() {
         <div className="flex items-center gap-4">
           <PriceEstimate />
           <Button onClick={goToNextStep} disabled={!tattooDetails.shading}>
-            Proximo
+            Próximo
           </Button>
         </div>
       </div>

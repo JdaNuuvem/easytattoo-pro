@@ -97,8 +97,8 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
 
   const getStepTitle = () => {
     const titles: Record<BookingStep, string> = {
-      artist: "Apresentacao do Tatuador",
-      personal: "Informacoes Pessoais",
+      artist: "Apresentação do Tatuador",
+      personal: "Informações Pessoais",
       ageTerms: "Termos de Maioridade",
       companion: "Acompanhante e Local",
       type: "Tipo de Tatuagem",
@@ -106,8 +106,8 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
       shading: "Sombras e Detalhes",
       color: "Escolha de Cores",
       location: "Local do Corpo",
-      references: "Referencias",
-      promotion: "Promocao Relampago",
+      references: "Referências",
+      promotion: "Promoção Relâmpago",
       scheduling: "Agendamento",
       payment: "Pagamento",
     };
@@ -191,9 +191,6 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
               <CurrentIcon className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
-              Passo {displayStep + 1} de {totalSteps}
-            </span>
           </div>
           <span className="text-xs font-mono gradient-text font-semibold">
             {Math.round(progressPercent)}%

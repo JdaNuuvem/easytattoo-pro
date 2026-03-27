@@ -39,6 +39,39 @@ export class MyBookingsService {
     return { bookings, total: bookings.length };
   }
 
+  async findByPhone(phone: string) {
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    const clients = await this.prisma.client.findMany({
+      where: {
+        phone: { contains: cleanPhone },
+      },
+    });
+
+    if (clients.length === 0) {
+      return [];
+    }
+
+    const clientIds = clients.map((c) => c.id);
+
+    const bookings = await this.prisma.booking.findMany({
+      where: { clientId: { in: clientIds } },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: true,
+            instagram: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return bookings;
+  }
+
   async findById(userId: string, bookingId: string) {
     const client = await this.prisma.client.findUnique({
       where: { userId },

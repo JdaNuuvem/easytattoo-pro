@@ -18,8 +18,6 @@ import {
   MessageCircle,
 } from "lucide-react";
 
-const DEFAULT_DEPOSIT = 50;
-
 type PaymentStatus = "pending" | "generating" | "awaiting" | "confirmed" | "error";
 
 interface AsaasPaymentData {
@@ -40,7 +38,7 @@ export function Payment() {
     personalInfo,
   } = useBookingStore();
   const { goToPreviousStep } = useBookingNavigation();
-  const depositAmount = pricingConfig?.fixedDeposit ?? DEFAULT_DEPOSIT;
+  const depositAmount = pricingConfig?.fixedDeposit ?? priceCalculation?.depositAmount ?? 0;
 
   const [status, setStatus] = useState<PaymentStatus>("pending");
   const [paymentData, setPaymentData] = useState<AsaasPaymentData | null>(null);
@@ -114,7 +112,7 @@ export function Payment() {
     return (
       <div className="space-y-4">
         <Text className="text-foreground">
-          Nao foi possivel calcular o preco. Por favor, volte e preencha todos
+          Não foi possível calcular o preço. Por favor, volte e preencha todos
           os detalhes da tatuagem.
         </Text>
         <Button variant="outline" onClick={() => goToPreviousStep()}>
@@ -172,8 +170,8 @@ export function Payment() {
 
             {artistInfo?.phone && (
               <a
-                href={`https://wa.me/${artistInfo.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                  `Oi! Fiz o agendamento pelo EasyTattoo e ja paguei o sinal. Meu nome e ${personalInfo.firstName} ${personalInfo.lastName}.`
+                href={`https://wa.me/55${artistInfo.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                  `Olá! Fiz o agendamento pelo EasyTattoo e já paguei o sinal de R$${depositAmount.toFixed(2)}. Meu nome é ${personalInfo.firstName} ${personalInfo.lastName}. Gostaria de alinhar os detalhes da sessão.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -210,6 +208,19 @@ export function Payment() {
               {formatPrice(priceCalculation.totalPrice - depositAmount)}
             </Text>
           </div>
+          <Text className="text-xs text-muted-foreground mt-1">
+            O restante será pago de acordo com as opções de pagamento que o tatuador disponibilizar.
+          </Text>
+          {artistInfo?.paymentMethods && artistInfo.paymentMethods.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Text className="text-xs text-muted-foreground w-full">Formas aceitas:</Text>
+              {artistInfo.paymentMethods.map((method) => (
+                <span key={method} className="text-xs px-2 py-0.5 rounded-sm bg-primary/10 text-primary border border-primary/20">
+                  {method}
+                </span>
+              ))}
+            </div>
+          )}
         </Card>
 
         <Button
@@ -295,19 +306,39 @@ export function Payment() {
               </Text>
             </div>
             <Text className="text-xs text-muted-foreground mt-1">
-              O restante ({formatPrice(priceCalculation.totalPrice - depositAmount)}) sera
-              combinado diretamente com o tatuador.
+              O restante será pago de acordo com as opções de pagamento que o tatuador disponibilizar.
             </Text>
+            {artistInfo?.paymentMethods && artistInfo.paymentMethods.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <Text className="text-xs text-muted-foreground w-full">Formas de pagamento aceitas:</Text>
+                {artistInfo.paymentMethods.map((method) => (
+                  <span key={method} className="text-xs px-2 py-0.5 rounded-sm bg-primary/10 text-primary border border-primary/20">
+                    {method}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Card>
+
+      {/* Multiple tattoo reminder */}
+      <div className="border border-blue-500/30 rounded-sm p-4 bg-blue-500/5 space-y-2">
+        <div className="flex items-start gap-3">
+          <Clock className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+          <Text className="text-sm text-muted-foreground leading-relaxed">
+            Caso deseje fazer mais de uma tatuagem, o valor e detalhes adicionais deverão ser
+            acordados diretamente com o tatuador após o pagamento do sinal do primeiro orçamento.
+          </Text>
+        </div>
+      </div>
 
       {/* Payment Generation */}
       {status === "pending" && (
         <div className="space-y-4">
           <Text className="text-foreground">
-            Para confirmar seu horario, pague o sinal de {formatPrice(depositAmount)} via PIX.
-            Apos o pagamento, o contato do tatuador sera liberado.
+            Para confirmar seu horário, pague o sinal de {formatPrice(depositAmount)} via PIX.
+            Após o pagamento, o contato do tatuador será liberado.
           </Text>
 
           <Button
@@ -389,7 +420,7 @@ export function Payment() {
       {status === "error" && (
         <Card className="p-6 space-y-4 border-destructive/30 bg-destructive/5">
           <Text className="text-sm text-foreground">
-            Nao foi possivel gerar a cobranca PIX. Tente novamente ou entre em contato com o suporte.
+            Não foi possível gerar a cobrança PIX. Tente novamente ou entre em contato com o suporte.
           </Text>
           <Button onClick={generateAsaasPayment} variant="outline">
             Tentar novamente

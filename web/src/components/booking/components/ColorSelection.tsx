@@ -272,7 +272,7 @@ export function ColorSelection() {
         <div className="flex items-center gap-4">
           <PriceEstimate />
           <Button onClick={goToNextStep} disabled={!tattooDetails.colors}>
-            Proximo
+            Próximo
           </Button>
         </div>
       </div>

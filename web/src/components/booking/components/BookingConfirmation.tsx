@@ -112,7 +112,7 @@ export function BookingConfirmation({ artistId }: BookingConfirmationProps) {
       toast({
         title: "Agendamento realizado com sucesso!",
         description:
-          "Voce recebera uma confirmacao via WhatsApp com os detalhes do seu agendamento.",
+          "Você receberá uma confirmação via WhatsApp com os detalhes do seu agendamento.",
       });
     } catch (error: unknown) {
       console.error("Error creating booking:", error);
@@ -213,7 +213,7 @@ export function BookingConfirmation({ artistId }: BookingConfirmationProps) {
             <div className="flex items-start gap-3 p-3 rounded-sm bg-emerald-50 border border-emerald-300">
               <MessageCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
               <Text className="text-xs text-muted-foreground">
-                Ao confirmar, voce recebera uma mensagem via WhatsApp com todos os detalhes
+                Ao confirmar, você receberá uma mensagem via WhatsApp com todos os detalhes
                 do agendamento e o contato do tatuador.
               </Text>
             </div>
@@ -259,7 +259,7 @@ export function BookingConfirmation({ artistId }: BookingConfirmationProps) {
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <Text className="text-muted-foreground">
-            Seu agendamento foi confirmado com sucesso. Voce recebera uma
+            Seu agendamento foi confirmado com sucesso. Você receberá uma
             mensagem via WhatsApp com todos os detalhes.
           </Text>
 
@@ -267,7 +267,7 @@ export function BookingConfirmation({ artistId }: BookingConfirmationProps) {
             <div className="flex items-center justify-center gap-2 mb-2">
               <MessageCircle className="w-5 h-5 text-emerald-600" />
               <Text className="text-sm font-medium text-emerald-600">
-                Confirmacao enviada via WhatsApp
+                Confirmação enviada via WhatsApp
               </Text>
             </div>
             <Text className="text-xs text-muted-foreground">
