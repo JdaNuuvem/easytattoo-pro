@@ -213,7 +213,7 @@ export function CompanionAndLocation() {
       {artistInfo?.studios && artistInfo.studios.length > 0 && (
         <div className="space-y-4">
           <Label className="text-foreground">
-            Em qual estúdio quer fazer a marcação?
+            Qual estúdio fica melhor pra você fazer a marcação?
           </Label>
           <RadioGroup
             value={selectedLocation}
