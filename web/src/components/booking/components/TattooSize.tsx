@@ -19,32 +19,8 @@ import { Minimize2, Maximize2, CreditCard, PenLine, Ruler } from "lucide-react";
 const FIXED_SIZE = { width: 5, height: 5 };
 const TEXT_HEIGHT = 2;
 
-const SIZE_REFERENCES = [
-  {
-    name: "Cartão de Crédito",
-    widthCm: 8.5,
-    heightCm: 5.4,
-    icon: CreditCard,
-    color: "text-blue-400",
-    bgColor: "bg-blue-400/10",
-  },
-  {
-    name: "Caneta",
-    widthCm: 14,
-    heightCm: 1,
-    icon: PenLine,
-    color: "text-amber-400",
-    bgColor: "bg-amber-400/10",
-  },
-  {
-    name: "Folha A4 (largura)",
-    widthCm: 21,
-    heightCm: 29.7,
-    icon: Ruler,
-    color: "text-emerald-400",
-    bgColor: "bg-emerald-400/10",
-  },
-];
+// Escala: 1cm = PX_PER_CM pixels na tela
+const PX_PER_CM = 4.5;
 
 function SizeComparisonBar({
   currentWidth,
@@ -53,151 +29,145 @@ function SizeComparisonBar({
   currentWidth: number;
   currentHeight: number;
 }) {
-  const maxRef = 22;
-  const currentMax = Math.max(currentWidth, currentHeight);
+  const hasTattoo = currentWidth > 0 && currentHeight > 0;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-3 p-4 rounded-lg border border-border/50 bg-card/50"
+      className="p-4 rounded-lg border border-border/50 bg-card/50"
     >
-      <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-        Comparação de tamanho
+      <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground block mb-4">
+        Comparação de tamanho real
       </span>
 
-      <div className="space-y-3">
-        {/* Tatuagem atual */}
-        {currentMax > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary">
-                Sua tatuagem
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {currentWidth}x{currentHeight}cm
-              </span>
-            </div>
-            <div className="relative h-3 bg-muted/30 rounded-full overflow-hidden">
-              <motion.div
-                className="absolute inset-y-0 left-0 progress-gradient rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min((currentMax / maxRef) * 100, 100)}%` }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              />
-            </div>
-          </div>
-        )}
+      <div className="flex items-end justify-center gap-5 flex-wrap">
 
-        {/* Referências */}
-        {SIZE_REFERENCES.map((ref) => {
-          const refMax = Math.max(ref.widthCm, ref.heightCm);
-          const Icon = ref.icon;
-          return (
-            <div key={ref.name} className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Icon className={cn("w-3.5 h-3.5", ref.color)} />
-                  <span className="text-xs text-muted-foreground">
-                    {ref.name}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {ref.widthCm}x{ref.heightCm}cm
-                </span>
-              </div>
-              <div className="relative h-2 bg-muted/20 rounded-full overflow-hidden">
-                <div
-                  className={cn("absolute inset-y-0 left-0 rounded-full opacity-40", ref.bgColor)}
-                  style={{ width: `${Math.min((refMax / maxRef) * 100, 100)}%`, backgroundColor: `hsl(var(--muted-foreground) / 0.2)` }}
-                />
-                <div
-                  className={cn("absolute inset-y-0 left-0 rounded-full", ref.color.replace("text-", "bg-"))}
-                  style={{ width: `${Math.min((refMax / maxRef) * 100, 100)}%`, opacity: 0.5 }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Visualização proporcional dos objetos */}
-      <div className="flex items-end justify-center gap-4 pt-3 border-t border-border/30">
-        {/* Cartão de crédito */}
-        <div className="flex flex-col items-center gap-1">
+        {/* Cartão de crédito: 8.5 x 5.4 cm */}
+        <div className="flex flex-col items-center gap-2">
           <motion.div
-            className="border-2 border-blue-400/50 rounded-md bg-blue-400/5 flex items-center justify-center"
+            className="relative border-2 border-blue-400/60 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-400/5 flex items-center justify-center overflow-hidden"
             style={{
-              width: `${8.5 * 3.5}px`,
-              height: `${5.4 * 3.5}px`,
+              width: `${8.5 * PX_PER_CM}px`,
+              height: `${5.4 * PX_PER_CM}px`,
             }}
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
           >
-            <CreditCard className="w-4 h-4 text-blue-400/60" />
+            {/* Chip do cartão */}
+            <div className="absolute top-[20%] left-[12%] w-[18%] h-[30%] rounded-sm border border-blue-400/40 bg-blue-400/15" />
+            {/* Bandeira */}
+            <div className="absolute bottom-[12%] right-[8%] flex gap-0.5">
+              <div className="w-2 h-2 rounded-full bg-blue-400/30" />
+              <div className="w-2 h-2 rounded-full bg-blue-300/20 -ml-1" />
+            </div>
+            <CreditCard className="w-5 h-5 text-blue-400/40" />
           </motion.div>
-          <span className="text-[10px] text-muted-foreground">8.5cm</span>
+          <div className="text-center">
+            <span className="text-[11px] font-semibold text-blue-400 block">Cartão de Crédito</span>
+            <span className="text-[10px] text-muted-foreground">8.5 x 5.4 cm</span>
+          </div>
         </div>
 
-        {/* Sua tatuagem */}
-        {currentMax > 0 && (
-          <div className="flex flex-col items-center gap-1">
+        {/* Tatuagem do cliente */}
+        {hasTattoo && (
+          <div className="flex flex-col items-center gap-2">
             <motion.div
-              className="border-2 border-primary rounded-md bg-primary/10 flex items-center justify-center glow-magenta"
+              className="border-2 border-primary rounded-lg bg-primary/10 flex items-center justify-center glow-magenta relative"
               style={{
-                width: `${Math.max(currentWidth * 3.5, 14)}px`,
-                height: `${Math.max(currentHeight * 3.5, 14)}px`,
-                maxWidth: "105px",
-                maxHeight: "105px",
+                width: `${Math.max(currentWidth * PX_PER_CM, 18)}px`,
+                height: `${Math.max(currentHeight * PX_PER_CM, 18)}px`,
               }}
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+              layout
             >
-              <span className="text-[9px] font-mono text-primary font-bold">
+              {/* Grid pontilhado interno */}
+              <div className="absolute inset-1 border border-dashed border-primary/20 rounded" />
+              <span className="text-[10px] font-mono text-primary font-bold relative z-10">
                 {currentWidth}x{currentHeight}
               </span>
             </motion.div>
-            <span className="text-[10px] text-primary font-semibold">Tattoo</span>
+            <div className="text-center">
+              <span className="text-[11px] font-semibold text-primary block">Sua Tatuagem</span>
+              <span className="text-[10px] text-muted-foreground">{currentWidth} x {currentHeight} cm</span>
+            </div>
           </div>
         )}
 
-        {/* Caneta */}
-        <div className="flex flex-col items-center gap-1">
+        {/* Caneta: ~14cm comprimento, ~1cm largura */}
+        <div className="flex flex-col items-center gap-2">
           <motion.div
-            className="border-2 border-amber-400/50 rounded-full bg-amber-400/5 flex items-center justify-center"
+            className="relative flex items-center justify-center"
             style={{
-              width: `${1 * 3.5 + 4}px`,
-              height: `${14 * 3.5}px`,
+              width: `${1.2 * PX_PER_CM}px`,
+              height: `${14 * PX_PER_CM}px`,
             }}
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           >
-            <PenLine className="w-3 h-3 text-amber-400/60 rotate-180" />
+            {/* Corpo da caneta */}
+            <div
+              className="absolute inset-x-0 rounded-full border-2 border-amber-400/60 bg-gradient-to-b from-amber-400/15 via-amber-400/10 to-amber-500/20"
+              style={{ top: 0, bottom: `${1.5 * PX_PER_CM}px` }}
+            />
+            {/* Clip da caneta */}
+            <div
+              className="absolute right-0 bg-amber-400/30 rounded-sm"
+              style={{ top: `${0.5 * PX_PER_CM}px`, width: "3px", height: `${2 * PX_PER_CM}px` }}
+            />
+            {/* Ponta da caneta */}
+            <div
+              className="absolute inset-x-[25%] bottom-0 bg-amber-400/40"
+              style={{
+                height: `${1.5 * PX_PER_CM}px`,
+                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+              }}
+            />
+            <PenLine className="w-3 h-3 text-amber-400/50 rotate-180 relative z-10" />
           </motion.div>
-          <span className="text-[10px] text-muted-foreground">14cm</span>
+          <div className="text-center">
+            <span className="text-[11px] font-semibold text-amber-400 block">Caneta</span>
+            <span className="text-[10px] text-muted-foreground">14 cm</span>
+          </div>
         </div>
 
-        {/* Folha A4 largura = ~21cm */}
-        <div className="flex flex-col items-center gap-1">
+        {/* Régua / Controle remoto: ~21cm */}
+        <div className="flex flex-col items-center gap-2">
           <motion.div
-            className="border-2 border-emerald-400/50 rounded-md bg-emerald-400/5 flex items-center justify-center"
+            className="relative border-2 border-emerald-400/60 rounded-md bg-gradient-to-b from-emerald-400/10 to-emerald-500/5 flex flex-col items-center justify-between overflow-hidden"
             style={{
-              width: `${21 * 3.5}px`,
-              height: `${10 * 3.5}px`,
-              maxWidth: "75px",
-              maxHeight: "50px",
+              width: `${3 * PX_PER_CM}px`,
+              height: `${21 * PX_PER_CM}px`,
             }}
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.25, type: "spring", stiffness: 200 }}
           >
-            <Ruler className="w-4 h-4 text-emerald-400/60" />
+            {/* Marcações de régua a cada 5cm */}
+            {[0, 5, 10, 15, 20].map((cm) => (
+              <div
+                key={cm}
+                className="absolute left-0 right-0 flex items-center"
+                style={{ top: `${(cm / 21) * 100}%` }}
+              >
+                <div className="w-full h-px bg-emerald-400/25" />
+                <span className="absolute right-1 text-[7px] text-emerald-400/50 font-mono">
+                  {cm}
+                </span>
+              </div>
+            ))}
+            <Ruler className="w-4 h-4 text-emerald-400/40 relative z-10 mt-2" />
           </motion.div>
-          <span className="text-[10px] text-muted-foreground">21cm</span>
+          <div className="text-center">
+            <span className="text-[11px] font-semibold text-emerald-400 block">Régua 21cm</span>
+            <span className="text-[10px] text-muted-foreground">21 cm</span>
+          </div>
         </div>
+
       </div>
     </motion.div>
   );
