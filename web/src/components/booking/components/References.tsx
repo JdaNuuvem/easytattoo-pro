@@ -116,6 +116,14 @@ export function References() {
         Envie imagens de referencia do desenho que quer tatuar.
       </Text>
 
+      {/* Photo tip */}
+      <div className="flex items-start gap-2 text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-md px-3 py-2">
+        <span className="shrink-0 mt-0.5">📸</span>
+        <span>
+          Caso você tenha tattoos próximas ao local escolhido, anexe uma foto da área. Se possível, faça um círculo imaginando o tamanho que você quer.
+        </span>
+      </div>
+
       {/* Important notice */}
       <div className="rounded-lg p-4 glass-card border border-primary/20 space-y-2">
         <div className="flex items-start gap-3">
