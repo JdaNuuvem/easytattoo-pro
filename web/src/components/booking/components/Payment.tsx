@@ -131,7 +131,7 @@ export function Payment() {
             <CheckCircle className="w-10 h-10 text-emerald-600" />
           </div>
           <h3 className="text-xl font-mono uppercase tracking-wider text-foreground">
-            Pagamento Confirmado!
+            Sessão Agendada!
           </h3>
           <Text className="text-muted-foreground">
             Seu sinal de {formatPrice(depositAmount)} foi confirmado com sucesso.
@@ -145,7 +145,7 @@ export function Payment() {
             Contato do Tatuador
           </h4>
           <Text className="text-sm text-muted-foreground">
-            Agora que seu pagamento foi confirmado, entre em contato com o tatuador
+            Agora que sua sessão foi confirmada, entre em contato com o tatuador
             para alinhar os detalhes da sua sessao:
           </Text>
 
@@ -241,7 +241,7 @@ export function Payment() {
       <Card className="p-6 space-y-4 border-border bg-card">
         <h3 className="font-mono uppercase tracking-wider font-semibold text-primary flex items-center gap-2">
           <DollarSign className="w-5 h-5" />
-          Resumo do Pagamento
+          Resumo do Agendamento
         </h3>
 
         <div className="space-y-2">
@@ -328,7 +328,7 @@ export function Payment() {
           <Clock className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
           <Text className="text-sm text-muted-foreground leading-relaxed">
             Caso deseje fazer mais de uma tatuagem, o valor e detalhes adicionais deverão ser
-            acordados diretamente com o tatuador após o pagamento do sinal do primeiro orçamento.
+            acordados diretamente com o tatuador após a confirmação do sinal do primeiro orçamento.
           </Text>
         </div>
       </div>
@@ -338,14 +338,14 @@ export function Payment() {
         <div className="space-y-4">
           <Text className="text-foreground">
             Para confirmar seu horário, pague o sinal de {formatPrice(depositAmount)} via PIX.
-            Após o pagamento, o contato do tatuador será liberado.
+            Após a confirmação, o contato do tatuador será liberado.
           </Text>
 
           <Button
             className="w-full"
             onClick={generateAsaasPayment}
           >
-            Gerar PIX - {formatPrice(depositAmount)}
+            Agendar Minha Sessão - {formatPrice(depositAmount)}
           </Button>
         </div>
       )}
@@ -406,7 +406,7 @@ export function Payment() {
           <div className="flex items-center gap-2 p-3 rounded-sm bg-yellow-500/5 border border-yellow-500/20">
             <Clock className="w-4 h-4 text-yellow-500 shrink-0" />
             <Text className="text-xs text-muted-foreground">
-              Aguardando confirmacao do pagamento... A pagina sera atualizada automaticamente.
+              Aguardando confirmação do sinal... A página será atualizada automaticamente.
             </Text>
           </div>
 

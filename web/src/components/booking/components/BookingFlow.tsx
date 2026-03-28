@@ -109,7 +109,7 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
       references: "Referências",
       promotion: "Promoção Relâmpago",
       scheduling: "Agendamento",
-      payment: "Pagamento",
+      payment: "Agendar Minha Sessão",
     };
     return titles[currentStepName] || "Agendamento";
   };
