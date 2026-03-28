@@ -28,6 +28,11 @@ import {
   Target,
   Crown,
   ShoppingCart,
+  MessageCircle,
+  Instagram,
+  Lock,
+  Zap,
+  Check,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -53,12 +58,56 @@ interface LeadStats {
   topLocations: Array<{ city: string; count: number }>;
 }
 
+type SubscriptionPlan = "free" | "basic" | "pro";
+
+const PLANS = [
+  {
+    id: "free" as const,
+    name: "Gratuito",
+    price: "R$ 0",
+    period: "",
+    features: ["Até 10 leads/mês", "Visualizar nome e cidade"],
+    leadsLimit: 10,
+    showContacts: false,
+  },
+  {
+    id: "basic" as const,
+    name: "Básico",
+    price: "R$ 29,90",
+    period: "/mês",
+    features: [
+      "Leads ilimitados",
+      "WhatsApp e Instagram dos leads",
+      "Exportar CSV",
+    ],
+    leadsLimit: Infinity,
+    showContacts: true,
+  },
+  {
+    id: "pro" as const,
+    name: "Pro",
+    price: "R$ 59,90",
+    period: "/mês",
+    features: [
+      "Tudo do Básico",
+      "Leads diários por WhatsApp",
+      "Lista Lookalike para Ads",
+      "Leads de estúdios parceiros",
+    ],
+    leadsLimit: Infinity,
+    showContacts: true,
+  },
+];
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>("free");
   const { toast } = useToast();
+
+  const plan = PLANS.find((p) => p.id === currentPlan)!;
 
   useEffect(() => {
     fetchLeads();
@@ -227,6 +276,57 @@ export default function LeadsPage() {
         </Card>
       </div>
 
+      {/* Subscription Plans */}
+      {currentPlan === "free" && (
+        <div className="mb-8 p-5 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            <h3 className="font-mono uppercase tracking-wider font-bold text-sm text-foreground">
+              Desbloqueie o contato dos leads
+            </h3>
+          </div>
+          <Text className="text-sm text-muted-foreground">
+            No plano gratuito você vê apenas nome e cidade. Assine para acessar WhatsApp, Instagram e exportar listas.
+          </Text>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {PLANS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  if (p.id !== "free") {
+                    // TODO: integrar com gateway de pagamento
+                    toast({ title: `Plano ${p.name} selecionado!`, description: "Integração com pagamento em breve." });
+                  }
+                  setCurrentPlan(p.id);
+                }}
+                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                  currentPlan === p.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-card hover:border-primary/40"
+                }`}
+              >
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-foreground">{p.price}</span>
+                  <span className="text-xs text-muted-foreground">{p.period}</span>
+                </div>
+                <span className="text-xs font-mono uppercase tracking-wider font-semibold text-primary block mt-1">
+                  {p.name}
+                </span>
+                <ul className="mt-2 space-y-1">
+                  {p.features.map((f) => (
+                    <li key={f} className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Check className="w-3 h-3 text-primary shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Leads Table */}
       <Card className="border-border">
         <CardHeader>
@@ -243,33 +343,26 @@ export default function LeadsPage() {
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <Text className="text-muted-foreground">
-                Nenhum lead capturado ainda. Os leads serao coletados automaticamente dos agendamentos.
+                Nenhum lead capturado ainda. Os leads serão coletados automaticamente dos agendamentos.
               </Text>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[600px]">
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
                     <TableHead>Cidade</TableHead>
                     <TableHead>Estilo</TableHead>
                     <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Contato</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.slice(0, 50).map((lead) => (
+                  {leads.slice(0, plan.leadsLimit === Infinity ? 100 : plan.leadsLimit).map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">
                         {lead.firstName} {lead.lastName}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {lead.email}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {lead.phone}
                       </TableCell>
                       <TableCell>
                         {lead.city && (
@@ -288,10 +381,68 @@ export default function LeadsPage() {
                       <TableCell className="text-muted-foreground text-xs">
                         {new Date(lead.createdAt).toLocaleDateString("pt-BR")}
                       </TableCell>
+                      <TableCell>
+                        {plan.showContacts ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {lead.phone && (
+                              <a
+                                href={`https://wa.me/55${lead.phone.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10">
+                                  <MessageCircle className="w-4 h-4" />
+                                </Button>
+                              </a>
+                            )}
+                            {lead.instagram && (
+                              <a
+                                href={`https://instagram.com/${lead.instagram.replace("@", "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-pink-500 hover:bg-pink-500/10">
+                                  <Instagram className="w-4 h-4" />
+                                </Button>
+                              </a>
+                            )}
+                            {lead.email && (
+                              <a href={`mailto:${lead.email}`}>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500 hover:bg-blue-500/10">
+                                  <Mail className="w-4 h-4" />
+                                </Button>
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1 text-muted-foreground">
+                            <Lock className="w-3 h-3" />
+                            <span className="text-[10px]">Assine para ver</span>
+                          </div>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Limit notice for free plan */}
+              {currentPlan === "free" && leads.length > plan.leadsLimit && (
+                <div className="text-center py-4 border-t border-border">
+                  <Text className="text-xs text-muted-foreground">
+                    Mostrando {plan.leadsLimit} de {leads.length} leads.{" "}
+                    <button
+                      type="button"
+                      className="text-primary font-semibold hover:underline"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Assine para ver todos
+                    </button>
+                  </Text>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
