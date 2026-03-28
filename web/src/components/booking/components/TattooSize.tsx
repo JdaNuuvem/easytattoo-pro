@@ -14,10 +14,194 @@ import {
 import { PriceEstimate } from "./PriceEstimate";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Minimize2, Maximize2 } from "lucide-react";
+import { Minimize2, Maximize2, CreditCard, PenLine, Ruler } from "lucide-react";
 
 const FIXED_SIZE = { width: 5, height: 5 };
 const TEXT_HEIGHT = 2;
+
+const SIZE_REFERENCES = [
+  {
+    name: "Cartão de Crédito",
+    widthCm: 8.5,
+    heightCm: 5.4,
+    icon: CreditCard,
+    color: "text-blue-400",
+    bgColor: "bg-blue-400/10",
+  },
+  {
+    name: "Caneta",
+    widthCm: 14,
+    heightCm: 1,
+    icon: PenLine,
+    color: "text-amber-400",
+    bgColor: "bg-amber-400/10",
+  },
+  {
+    name: "Folha A4 (largura)",
+    widthCm: 21,
+    heightCm: 29.7,
+    icon: Ruler,
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-400/10",
+  },
+];
+
+function SizeComparisonBar({
+  currentWidth,
+  currentHeight,
+}: {
+  currentWidth: number;
+  currentHeight: number;
+}) {
+  const maxRef = 22;
+  const currentMax = Math.max(currentWidth, currentHeight);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-3 p-4 rounded-lg border border-border/50 bg-card/50"
+    >
+      <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+        Comparação de tamanho
+      </span>
+
+      <div className="space-y-3">
+        {/* Tatuagem atual */}
+        {currentMax > 0 && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-primary">
+                Sua tatuagem
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {currentWidth}x{currentHeight}cm
+              </span>
+            </div>
+            <div className="relative h-3 bg-muted/30 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute inset-y-0 left-0 progress-gradient rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((currentMax / maxRef) * 100, 100)}%` }}
+                transition={{ type: "spring", stiffness: 100, damping: 20 }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Referências */}
+        {SIZE_REFERENCES.map((ref) => {
+          const refMax = Math.max(ref.widthCm, ref.heightCm);
+          const Icon = ref.icon;
+          return (
+            <div key={ref.name} className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Icon className={cn("w-3.5 h-3.5", ref.color)} />
+                  <span className="text-xs text-muted-foreground">
+                    {ref.name}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {ref.widthCm}x{ref.heightCm}cm
+                </span>
+              </div>
+              <div className="relative h-2 bg-muted/20 rounded-full overflow-hidden">
+                <div
+                  className={cn("absolute inset-y-0 left-0 rounded-full opacity-40", ref.bgColor)}
+                  style={{ width: `${Math.min((refMax / maxRef) * 100, 100)}%`, backgroundColor: `hsl(var(--muted-foreground) / 0.2)` }}
+                />
+                <div
+                  className={cn("absolute inset-y-0 left-0 rounded-full", ref.color.replace("text-", "bg-"))}
+                  style={{ width: `${Math.min((refMax / maxRef) * 100, 100)}%`, opacity: 0.5 }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Visualização proporcional dos objetos */}
+      <div className="flex items-end justify-center gap-4 pt-3 border-t border-border/30">
+        {/* Cartão de crédito */}
+        <div className="flex flex-col items-center gap-1">
+          <motion.div
+            className="border-2 border-blue-400/50 rounded-md bg-blue-400/5 flex items-center justify-center"
+            style={{
+              width: `${8.5 * 3.5}px`,
+              height: `${5.4 * 3.5}px`,
+            }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <CreditCard className="w-4 h-4 text-blue-400/60" />
+          </motion.div>
+          <span className="text-[10px] text-muted-foreground">8.5cm</span>
+        </div>
+
+        {/* Sua tatuagem */}
+        {currentMax > 0 && (
+          <div className="flex flex-col items-center gap-1">
+            <motion.div
+              className="border-2 border-primary rounded-md bg-primary/10 flex items-center justify-center glow-magenta"
+              style={{
+                width: `${Math.max(currentWidth * 3.5, 14)}px`,
+                height: `${Math.max(currentHeight * 3.5, 14)}px`,
+                maxWidth: "105px",
+                maxHeight: "105px",
+              }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <span className="text-[9px] font-mono text-primary font-bold">
+                {currentWidth}x{currentHeight}
+              </span>
+            </motion.div>
+            <span className="text-[10px] text-primary font-semibold">Tattoo</span>
+          </div>
+        )}
+
+        {/* Caneta */}
+        <div className="flex flex-col items-center gap-1">
+          <motion.div
+            className="border-2 border-amber-400/50 rounded-full bg-amber-400/5 flex items-center justify-center"
+            style={{
+              width: `${1 * 3.5 + 4}px`,
+              height: `${14 * 3.5}px`,
+            }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <PenLine className="w-3 h-3 text-amber-400/60 rotate-180" />
+          </motion.div>
+          <span className="text-[10px] text-muted-foreground">14cm</span>
+        </div>
+
+        {/* Folha A4 largura = ~21cm */}
+        <div className="flex flex-col items-center gap-1">
+          <motion.div
+            className="border-2 border-emerald-400/50 rounded-md bg-emerald-400/5 flex items-center justify-center"
+            style={{
+              width: `${21 * 3.5}px`,
+              height: `${10 * 3.5}px`,
+              maxWidth: "75px",
+              maxHeight: "50px",
+            }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Ruler className="w-4 h-4 text-emerald-400/60" />
+          </motion.div>
+          <span className="text-[10px] text-muted-foreground">21cm</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export function TattooSize() {
   const { tattooDetails, updateTattooDetails, pricingConfig } =
@@ -261,6 +445,12 @@ export function TattooSize() {
             </div>
           </motion.div>
         )}
+
+        {/* Comparação visual de tamanho */}
+        <SizeComparisonBar
+          currentWidth={tattooDetails.size.width}
+          currentHeight={isTextType ? TEXT_HEIGHT : tattooDetails.size.height}
+        />
       </div>
 
       <div className="flex items-center justify-between">
