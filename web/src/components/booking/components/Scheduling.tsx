@@ -177,6 +177,13 @@ export function Scheduling() {
                 }. Caso ultrapasse, o tatuador combinará o ajuste com você.`
               : "Selecione a data e horário para sua sessão. O tatuador combinará os detalhes com você."}
           </Text>
+
+          <div className="flex items-start gap-2 text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-md px-3 py-2">
+            <span className="shrink-0 mt-0.5">⏱️</span>
+            <span>
+              Se a tatuagem demorar mais que o previsto, o tatuador ajusta isso diretamente com você.
+            </span>
+          </div>
         </div>
 
         {/* Google Calendar Integration */}
