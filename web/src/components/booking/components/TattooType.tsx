@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/typography";
 import { useBookingStore } from "@/stores/booking";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
-import { Pen, Type, Layers } from "lucide-react";
+import { Pen, Type, Layers, Minus, CircleDot, PaintBucket } from "lucide-react";
 
 const getTypeIcon = (type: string) => {
   const iconMap: Record<string, React.ReactNode> = {
@@ -43,8 +43,41 @@ export function TattooType() {
       updates.size = { width: 30, height: 30 };
       updates.shading = "realism";
     }
+    if (type !== "drawing") {
+      updates.drawingStyle = undefined;
+    }
     updateTattooDetails(updates);
   };
+
+  const handleDrawingStyleChange = (style: string) => {
+    updateTattooDetails({
+      drawingStyle: style as typeof tattooDetails.drawingStyle,
+    });
+  };
+
+  const drawingStyleOptions = [
+    {
+      id: "lines-only",
+      name: "Apenas Traços",
+      description: "Somente linhas, sem preenchimento",
+      icon: <Minus className="w-6 h-6" />,
+    },
+    {
+      id: "dotwork",
+      name: "Pontilhismo",
+      description: "Feita com pontos",
+      icon: <CircleDot className="w-6 h-6" />,
+    },
+    {
+      id: "blackfill",
+      name: "Parte Pintada de Preto",
+      description: "Com áreas preenchidas em preto",
+      icon: <PaintBucket className="w-6 h-6" />,
+    },
+  ];
+
+  const isDrawing = tattooDetails.type === "drawing";
+  const canProceed = tattooDetails.type && (!isDrawing || tattooDetails.drawingStyle);
 
   return (
     <div className="space-y-8">
@@ -117,13 +150,67 @@ export function TattooType() {
             })}
           </motion.div>
         </RadioGroup>
+
+        {/* Sub-opções para Desenho */}
+        {isDrawing && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-3"
+          >
+            <Text className="text-muted-foreground text-sm">
+              Sua tatuagem tem:
+            </Text>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {drawingStyleOptions.map((option) => {
+                const isStyleSelected = tattooDetails.drawingStyle === option.id;
+                return (
+                  <motion.button
+                    key={option.id}
+                    type="button"
+                    onClick={() => handleDrawingStyleChange(option.id)}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 bg-card/80 backdrop-blur-sm cursor-pointer transition-all duration-300
+                      ${isStyleSelected
+                        ? "border-primary glow-magenta bg-primary/[0.03]"
+                        : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
+                      }`}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <div className={`p-2 rounded-lg transition-colors duration-300 ${isStyleSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {option.icon}
+                    </div>
+                    <span className="font-mono uppercase tracking-wider font-bold text-xs text-foreground text-center">
+                      {option.name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground text-center">
+                      {option.description}
+                    </span>
+                    {isStyleSelected && (
+                      <motion.div
+                        className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={goToPreviousStep}>
           Voltar
         </Button>
-        <Button onClick={goToNextStep} disabled={!tattooDetails.type}>
+        <Button onClick={goToNextStep} disabled={!canProceed}>
           Próximo
         </Button>
       </div>

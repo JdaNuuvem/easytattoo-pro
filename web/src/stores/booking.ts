@@ -55,6 +55,7 @@ export interface BookingState {
   };
   tattooDetails: {
     type: TattooType | undefined;
+    drawingStyle: "lines-only" | "dotwork" | "blackfill" | undefined;
     size: {
       width: number;
       height: number;
@@ -114,6 +115,7 @@ const initialState: BookingState = {
   },
   tattooDetails: {
     type: undefined,
+    drawingStyle: undefined,
     size: {
       width: 0,
       height: 0,
