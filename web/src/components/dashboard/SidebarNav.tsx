@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Target,
+  Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/dashboard/portfolio", title: "Portfolio", icon: Image },
   { href: "/dashboard/horarios", title: "Horarios", icon: Clock },
   { href: "/dashboard/leads", title: "Leads", icon: Target },
+  { href: "/dashboard/promocoes", title: "Promoções", icon: Gift },
   { href: "/dashboard/perfil", title: "Perfil", icon: UserCog },
   { href: "/dashboard/relatorios", title: "Relatorios", icon: BarChart3 },
 ];

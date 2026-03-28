@@ -14,31 +14,29 @@ import type { PromotionType } from "@/stores/booking";
 import { Gift, Sparkles, ThumbsUp } from "lucide-react";
 
 const promotionSchema = z.object({
-  type: z.enum(["none", "mini-pack", "second-tattoo"] as const),
+  type: z.string().min(1),
 });
 
 type PromotionFormData = z.infer<typeof promotionSchema>;
 
-const promotionOptions = [
+const defaultPromotionOptions = [
   {
-    value: "mini-pack" as const,
+    value: "mini-pack",
     title: "Pack Mini Tattoos",
     description:
-      "Faca ate 2 mini tattoos (tamanho ate 6x6 cm) no mesmo dia por um preco promocional",
+      "Faça até 2 mini tattoos (tamanho até 6x6 cm) no mesmo dia por um preço promocional",
+    discount: "2 por 1",
+    imageUrl: "",
     icon: Gift,
   },
   {
-    value: "second-tattoo" as const,
+    value: "second-tattoo",
     title: "Pack Segunda Tattoo",
     description:
       "Em tatuagens maiores de 6x6 cm feitas no mesmo dia, a segunda tem 20% de desconto",
+    discount: "20% off",
+    imageUrl: "",
     icon: Sparkles,
-  },
-  {
-    value: "none" as const,
-    title: "Nao desejo adicionar mais tattoos",
-    description: "Continue com apenas uma tatuagem",
-    icon: ThumbsUp,
   },
 ];
 
@@ -53,12 +51,25 @@ const itemVariants = {
 };
 
 export function FlashPromotion() {
-  const { promotion, updatePromotion } = useBookingStore();
+  const { promotion, updatePromotion, artistInfo } = useBookingStore();
   const { goToNextStep, goToPreviousStep } = useBookingNavigation();
+
+  // Use artist promotions if available, otherwise use defaults
+  const artistPromotions = artistInfo?.promotions?.filter((p) => p.enabled) || [];
+  const promotionOptions =
+    artistPromotions.length > 0
+      ? artistPromotions.map((p) => ({
+          value: p.id,
+          title: p.title,
+          description: p.description,
+          discount: p.discount,
+          imageUrl: p.imageUrl,
+          icon: Gift,
+        }))
+      : defaultPromotionOptions;
 
   const {
     handleSubmit,
-    formState: { errors },
     setValue,
   } = useForm<PromotionFormData>({
     resolver: zodResolver(promotionSchema),
@@ -69,7 +80,7 @@ export function FlashPromotion() {
 
   const onSubmit = (data: PromotionFormData) => {
     updatePromotion({
-      type: data.type,
+      type: data.type as PromotionType,
     });
     goToNextStep();
   };
@@ -78,17 +89,17 @@ export function FlashPromotion() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       <div className="space-y-4">
         <h3 className="font-mono uppercase tracking-wider font-bold text-lg gradient-text">
-          Promocao Relampago!
+          Promoções Especiais!
         </h3>
         <Text className="text-muted-foreground">
-          Aproveite nossas promocoes especiais e faca mais de uma tatuagem com
-          condicoes exclusivas.
+          Aproveite as promoções e faça mais de uma tatuagem com condições
+          exclusivas.
         </Text>
       </div>
 
       <RadioGroup
         defaultValue={promotion.type}
-        onValueChange={(value) => setValue("type", value as PromotionType)}
+        onValueChange={(value) => setValue("type", value)}
         className="grid gap-3"
       >
         <motion.div
@@ -116,43 +127,125 @@ export function FlashPromotion() {
                 />
                 <Label
                   htmlFor={option.value}
-                  className={`flex items-center gap-4 p-4 rounded-lg border-2 bg-card/80 backdrop-blur-sm cursor-pointer transition-all duration-300
-                    ${isSelected
-                      ? "border-primary glow-magenta bg-primary/[0.03]"
-                      : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
+                  className={`flex items-stretch rounded-lg border-2 bg-card/80 backdrop-blur-sm cursor-pointer transition-all duration-300 overflow-hidden
+                    ${
+                      isSelected
+                        ? "border-primary glow-magenta bg-primary/[0.03]"
+                        : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
                     }
                     peer-data-[state=checked]:border-primary peer-data-[state=checked]:glow-magenta
                     [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:glow-magenta`}
                 >
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 ${isSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    <IconComponent className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="font-mono uppercase tracking-wider font-bold text-foreground">
+                  {/* Image */}
+                  {option.imageUrl ? (
+                    <div className="w-[100px] sm:w-[120px] shrink-0">
+                      <img
+                        src={option.imageUrl}
+                        alt={option.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`w-16 shrink-0 flex items-center justify-center transition-colors duration-300 ${
+                        isSelected
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="flex-1 p-4">
+                    <p className="font-mono uppercase tracking-wider font-bold text-foreground text-sm">
                       {option.title}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {option.description}
                     </p>
+                    {option.discount && (
+                      <span className="inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        {option.discount}
+                      </span>
+                    )}
                   </div>
+
                   {isSelected && (
                     <motion.div
                       className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                      }}
                     />
                   )}
                 </Label>
               </motion.div>
             );
           })}
+
+          {/* Option: no promotion */}
+          <motion.div
+            className="relative"
+            variants={itemVariants}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          >
+            <RadioGroupItem
+              value="none"
+              id="none"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="none"
+              className={`flex items-center gap-4 p-4 rounded-lg border-2 bg-card/80 backdrop-blur-sm cursor-pointer transition-all duration-300
+                ${
+                  promotion.type === "none"
+                    ? "border-primary glow-magenta bg-primary/[0.03]"
+                    : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
+                }
+                peer-data-[state=checked]:border-primary peer-data-[state=checked]:glow-magenta
+                [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:glow-magenta`}
+            >
+              <div
+                className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 ${
+                  promotion.type === "none"
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <ThumbsUp className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-mono uppercase tracking-wider font-bold text-foreground">
+                  Não desejo adicionar mais tattoos
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Continue com apenas uma tatuagem
+                </p>
+              </div>
+              {promotion.type === "none" && (
+                <motion.div
+                  className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 30,
+                  }}
+                />
+              )}
+            </Label>
+          </motion.div>
         </motion.div>
       </RadioGroup>
-
-      {errors.type && (
-        <p className="text-sm text-destructive">{errors.type.message}</p>
-      )}
 
       <div className="flex gap-4">
         <Button type="button" variant="outline" onClick={goToPreviousStep}>

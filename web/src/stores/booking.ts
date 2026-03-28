@@ -31,6 +31,14 @@ export interface BookingState {
     maxCompanions?: number;
     paymentMethods?: string[];
     studios?: Array<{ id: string; name: string; address?: string }>;
+    promotions?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      discount: string;
+      imageUrl: string;
+      enabled: boolean;
+    }>;
   } | null;
   personalInfo: {
     firstName: string;
