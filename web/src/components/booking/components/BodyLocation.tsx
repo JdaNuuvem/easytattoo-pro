@@ -296,6 +296,13 @@ export function BodyLocation() {
           Onde você quer fazer a tatuagem?
         </Text>
 
+        <div className="flex items-start gap-2 text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-md px-3 py-2">
+          <span className="shrink-0 mt-0.5">⚠️</span>
+          <span>
+            Se caso você quiser mudar o local da tattoo no dia, dependendo da área o valor pode diminuir ou aumentar.
+          </span>
+        </div>
+
         <RadioGroup
           value={tattooDetails.bodyLocation}
           onValueChange={handleLocationChange}
