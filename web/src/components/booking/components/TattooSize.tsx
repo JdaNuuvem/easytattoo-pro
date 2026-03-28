@@ -364,6 +364,18 @@ export function TattooSize() {
             transition={{ duration: 0.3 }}
             className="space-y-4 p-4 rounded-lg border border-border/50 glass-card"
           >
+            {/* Explicação visual largura x altura */}
+            {!isTextType && (
+              <div className="flex items-center justify-center gap-4 pb-2">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="relative border-2 border-dashed border-primary/40 rounded bg-primary/5" style={{ width: "60px", height: "36px" }}>
+                    <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-primary font-mono">largura</span>
+                    <span className="absolute -right-[30px] top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground font-mono rotate-90">altura</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div
               className={cn(
                 "flex",
