@@ -20,6 +20,7 @@ import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { getStoredUser } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MapPin } from "lucide-react";
 
 const personalInfoSchema = z.object({
@@ -220,6 +221,21 @@ export function PersonalInfo() {
             </FormItem>
           )}
         />
+
+        {/* Marketing consent */}
+        <div className="flex items-start gap-3 p-3 rounded-md border border-border bg-card/50">
+          <Checkbox
+            id="marketingConsent"
+            className="mt-0.5"
+            onCheckedChange={(checked) => {
+              // Store consent state - will be sent with form data
+              (window as unknown as Record<string, unknown>).__marketingConsent = !!checked;
+            }}
+          />
+          <label htmlFor="marketingConsent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+            Aceito receber ofertas e novidades de estúdios parceiros por e-mail ou WhatsApp.
+          </label>
+        </div>
 
         {/* Geolocation indicator */}
         {geoLoading && (
