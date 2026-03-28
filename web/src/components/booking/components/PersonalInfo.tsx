@@ -177,6 +177,9 @@ export function PersonalInfo() {
                   className="bg-card border-border focus-visible:ring-primary focus-visible:border-primary"
                 />
               </FormControl>
+              <span className="text-[11px] text-muted-foreground">
+                Será usado para enviar os dados de confirmação da reserva
+              </span>
               <FormMessage />
             </FormItem>
           )}
