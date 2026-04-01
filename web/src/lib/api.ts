@@ -1,13 +1,25 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+function getApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
 
-if (!API_URL && typeof window !== "undefined") {
-  console.warn("[EasyTattoo] NEXT_PUBLIC_API_URL não configurado. Usando localhost:3090 como fallback.");
+  // If running on the server (SSR), use the internal Docker URL
+  if (typeof window === "undefined") {
+    return envUrl || "http://api:3000";
+  }
+
+  // If NEXT_PUBLIC_API_URL is set and is a real public URL (not internal Docker hostname), use it
+  if (envUrl && !envUrl.includes("://api:")) {
+    return envUrl;
+  }
+
+  // Auto-detect: use the browser's current hostname with API port 3000
+  const { protocol, hostname } = window.location;
+  return `${protocol}//${hostname}:3000`;
 }
 
 export const api = axios.create({
-  baseURL: API_URL || "http://localhost:3090",
+  baseURL: getApiBaseUrl(),
   headers: { "Content-Type": "application/json" },
 });
 

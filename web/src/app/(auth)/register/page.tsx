@@ -143,11 +143,15 @@ export default function RegisterPage() {
         description: "Verifique seu email para confirmar sua conta.",
       });
       router.push(getHomeRouteForRole(user.role));
-    } catch (error) {
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Ocorreu um erro ao criar sua conta. Tente novamente.";
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
-        description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
+        description: Array.isArray(message) ? message.join(", ") : message,
       });
     } finally {
       setIsLoading(false);
