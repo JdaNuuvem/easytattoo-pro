@@ -2,8 +2,12 @@ node_modules/
 dist/
 .next/
 .env
+.env.*
 .env.local
 .env.production
+api/.env
+web/.env
+web/.env.local
 *.log
 uploads/*
 !uploads/.gitkeep

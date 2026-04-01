@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkScheduleDto } from './dto/create-work-schedule.dto';
 import { CreateSpecialDateDto } from './dto/create-special-date.dto';
@@ -98,7 +98,11 @@ export class ScheduleService {
       available: boolean;
     }> = [];
 
+    const timeFormat = /^([01]\d|2[0-3]):[0-5]\d$/;
     for (const schedule of workSchedules) {
+      if (!timeFormat.test(schedule.startTime) || !timeFormat.test(schedule.endTime)) {
+        throw new BadRequestException('Invalid time format in work schedule. Expected HH:MM.');
+      }
       const [startH, startM] = schedule.startTime.split(':').map(Number);
       const [endH, endM] = schedule.endTime.split(':').map(Number);
       const startMinutes = startH * 60 + (startM || 0);

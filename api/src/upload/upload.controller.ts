@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   UseInterceptors,
@@ -29,7 +30,16 @@ function generateFilename(
   callback(null, `${uniqueSuffix}${ext}`);
 }
 
+const ALLOWED_SUBDIRECTORIES = ['images', 'references', 'payment-proofs', 'portfolio', 'profile', 'cover'] as const;
+
+function validateSubdirectory(subdirectory: string): void {
+  if (!(ALLOWED_SUBDIRECTORIES as readonly string[]).includes(subdirectory)) {
+    throw new BadRequestException(`Invalid upload subdirectory: ${subdirectory}`);
+  }
+}
+
 function createMulterOptions(subdirectory: string) {
+  validateSubdirectory(subdirectory);
   return {
     storage: diskStorage({
       destination: (_req: any, _file: any, cb: any) => {

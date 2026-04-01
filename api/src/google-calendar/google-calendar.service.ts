@@ -55,7 +55,7 @@ export class GoogleCalendarService {
     });
 
     if (!response.ok) {
-      this.logger.error(`Token refresh failed: ${await response.text()}`);
+      this.logger.error(`Token refresh failed: ${(await response.text()).slice(0, 200)}`);
       return null;
     }
 
@@ -156,7 +156,7 @@ export class GoogleCalendarService {
     );
 
     if (!response.ok) {
-      this.logger.error(`Failed to create event: ${await response.text()}`);
+      this.logger.error(`Failed to create event: ${(await response.text()).slice(0, 200)}`);
       return null;
     }
 
@@ -201,7 +201,7 @@ export class GoogleCalendarService {
     );
 
     if (!response.ok) {
-      this.logger.error(`Failed to update event: ${await response.text()}`);
+      this.logger.error(`Failed to update event: ${(await response.text()).slice(0, 200)}`);
       return false;
     }
 
@@ -226,7 +226,7 @@ export class GoogleCalendarService {
     );
 
     if (!response.ok && response.status !== 404) {
-      this.logger.error(`Failed to delete event: ${await response.text()}`);
+      this.logger.error(`Failed to delete event: ${(await response.text()).slice(0, 200)}`);
       return false;
     }
 

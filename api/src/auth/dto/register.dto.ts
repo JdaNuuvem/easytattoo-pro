@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MinLength,
 } from 'class-validator';
 
@@ -24,9 +25,12 @@ export class RegisterDto {
   @IsNotEmpty()
   readonly email: string;
 
-  @ApiProperty({ example: 'securePassword123', minLength: 6 })
+  @ApiProperty({ example: 'securePassword123', minLength: 8 })
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+  })
   readonly password: string;
 
   @ApiPropertyOptional({ enum: RegisterRole, default: RegisterRole.ARTIST })

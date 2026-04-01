@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsBoolean,
   IsUUID,
+  Matches,
   Min,
   Max,
 } from 'class-validator';
@@ -30,11 +31,17 @@ export class CreateWorkScheduleDto {
   @ApiProperty({ example: '09:00' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'startTime must be in HH:MM format (00:00-23:59)',
+  })
   readonly startTime: string;
 
   @ApiProperty({ example: '18:00' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'endTime must be in HH:MM format (00:00-23:59)',
+  })
   readonly endTime: string;
 
   @ApiPropertyOptional({ default: true })

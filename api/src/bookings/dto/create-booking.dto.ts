@@ -10,6 +10,7 @@ import {
   IsEmail,
   IsUUID,
   Min,
+  Matches,
 } from 'class-validator';
 
 enum TattooType {
@@ -138,6 +139,10 @@ export class CreateBookingDto {
   // Reference image URLs (already uploaded)
   @ApiPropertyOptional({ type: [String] })
   @IsString({ each: true })
+  @Matches(/^(\/uploads\/[a-zA-Z0-9._\/-]+|https:\/\/.+)$/, {
+    each: true,
+    message: 'Each reference image must be a valid upload path or HTTPS URL',
+  })
   @IsOptional()
   readonly referenceImages?: string[];
 

@@ -68,13 +68,22 @@ export class LeadsService {
     };
   }
 
+  private escapeCsvField(field: string | null | undefined): string {
+    if (!field) return '""';
+    const escaped = field.replace(/"/g, '""');
+    if (/^[=+@\-\t\r]/.test(escaped)) {
+      return `"'${escaped}"`;
+    }
+    return `"${escaped}"`;
+  }
+
   async exportCsv(userId: string): Promise<string> {
     const leads = await this.getLeads(userId);
     const header = 'Nome,Email,Telefone,Instagram,Estilo,Data\n';
     const rows = leads
       .map(
         (l) =>
-          `"${l.firstName} ${l.lastName}","${l.email}","${l.phone}","${l.instagram}","${l.tattooStyle}","${l.createdAt}"`,
+          `${this.escapeCsvField(`${l.firstName} ${l.lastName}`)},${this.escapeCsvField(l.email)},${this.escapeCsvField(l.phone)},${this.escapeCsvField(l.instagram)},${this.escapeCsvField(l.tattooStyle)},${this.escapeCsvField(l.createdAt)}`,
       )
       .join('\n');
 
@@ -88,7 +97,7 @@ export class LeadsService {
       .filter((l) => l.email)
       .map(
         (l) =>
-          `"${l.email}","${l.phone}","${l.firstName}","${l.lastName}","BR"`,
+          `${this.escapeCsvField(l.email)},${this.escapeCsvField(l.phone)},${this.escapeCsvField(l.firstName)},${this.escapeCsvField(l.lastName)},${this.escapeCsvField('BR')}`,
       )
       .join('\n');
 

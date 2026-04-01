@@ -192,11 +192,13 @@ export class UsersService {
       throw new ConflictException('User is already a member of this studio');
     }
 
+    const validRole = role && ['MEMBER', 'ADMIN'].includes(role) ? role : 'MEMBER';
+
     return this.prisma.studioMember.create({
       data: {
         studioId,
         userId: targetUser.id,
-        role: role || 'MEMBER',
+        role: validRole,
       },
       include: {
         user: {
