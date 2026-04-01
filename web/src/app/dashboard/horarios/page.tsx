@@ -27,10 +27,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Clock, Plus, Trash2, CalendarOff } from "lucide-react";
+import { Clock, Plus, Trash2, CalendarOff, Calendar, Loader2, Unlink } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { ScheduleSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
+import { GoogleIcon } from "@/components/ui/google-icon";
 
 interface WorkHour {
   id: string;
@@ -57,6 +59,11 @@ const dayNames = [
   "Sabado",
 ];
 
+interface GoogleCalendarStatus {
+  connected: boolean;
+  email?: string;
+}
+
 export default function HorariosPage() {
   const [workHours, setWorkHours] = useState<WorkHour[]>([]);
   const [specialDates, setSpecialDates] = useState<SpecialDate[]>([]);
@@ -64,11 +71,57 @@ export default function HorariosPage() {
   const [specialDateOpen, setSpecialDateOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [newNote, setNewNote] = useState("");
+  const [gcalStatus, setGcalStatus] = useState<GoogleCalendarStatus>({ connected: false });
+  const [gcalLoading, setGcalLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
+    fetchGoogleCalendarStatus();
   }, []);
+
+  async function fetchGoogleCalendarStatus() {
+    try {
+      const response = await api.get("/google-calendar/status");
+      setGcalStatus(response.data);
+    } catch {
+      // Not connected or endpoint not available
+    }
+  }
+
+  async function disconnectGoogleCalendar() {
+    setGcalLoading(true);
+    try {
+      await api.delete("/google-calendar/disconnect");
+      setGcalStatus({ connected: false });
+      toast({
+        title: "Desconectado",
+        description: "Google Calendar foi desconectado",
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao desconectar Google Calendar",
+      });
+    } finally {
+      setGcalLoading(false);
+    }
+  }
+
+  function connectGoogleCalendar() {
+    const ok = redirectToGoogleAuth("artist-calendar", [
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
+    ]);
+    if (!ok) {
+      toast({
+        variant: "destructive",
+        title: "Google nao configurado",
+        description: "O Google OAuth nao esta configurado no sistema.",
+      });
+    }
+  }
 
   async function fetchData() {
     try {
@@ -167,6 +220,67 @@ export default function HorariosPage() {
         title="Horarios"
         description="Configure seus horarios de trabalho"
       />
+
+      {/* Google Calendar Integration */}
+      <Card className="border-border mb-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            <CardTitle className="text-sm">Google Calendar</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {gcalStatus.connected ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                <div>
+                  <p className="text-sm font-medium">Conectado</p>
+                  {gcalStatus.email && (
+                    <p className="text-xs text-muted-foreground">{gcalStatus.email}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Seus agendamentos serao sincronizados automaticamente
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={disconnectGoogleCalendar}
+                disabled={gcalLoading}
+                className="border-border text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                {gcalLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Desconectar
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Conecte seu Google Calendar para sincronizar agendamentos automaticamente
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={connectGoogleCalendar}
+                className="border-border flex items-center gap-2"
+              >
+                <GoogleIcon />
+                Conectar Google Calendar
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Work Hours Grid */}
       <Card className="border-border mb-6">

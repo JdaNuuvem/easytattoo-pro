@@ -15,6 +15,7 @@ import { MyBookingsModule } from './my-bookings/my-bookings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LeadsModule } from './leads/leads.module';
+import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { LeadsModule } from './leads/leads.module';
     PaymentsModule,
     NotificationsModule,
     LeadsModule,
+    GoogleCalendarModule,
   ],
 })
 export class AppModule {}

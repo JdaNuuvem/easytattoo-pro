@@ -152,6 +152,7 @@ model Booking {
   depositAmount     Float
   depositPaid       Boolean           @default(false)
   paymentProof      String?
+  googleCalendarEventId String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 

@@ -2,10 +2,12 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { PricingService } from '../pricing/pricing.service';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service';
 
 interface FindAllOptions {
   readonly userId: string;
@@ -18,9 +20,12 @@ interface FindAllOptions {
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
+    private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
   async create(dto: CreateBookingDto) {
@@ -113,6 +118,11 @@ export class BookingsService {
         })),
       });
     }
+
+    // Sync to Google Calendar (fire-and-forget)
+    this.googleCalendarService
+      .syncBookingToCalendar(booking.id)
+      .catch((err) => this.logger.error(`Google Calendar sync failed: ${err.message}`));
 
     return this.findById(booking.id);
   }
@@ -218,7 +228,7 @@ export class BookingsService {
       );
     }
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: status as any },
       include: {
@@ -226,6 +236,19 @@ export class BookingsService {
         references: true,
       },
     });
+
+    // Sync to Google Calendar
+    if (status === 'CANCELLED') {
+      this.googleCalendarService
+        .removeBookingFromCalendar(bookingId)
+        .catch((err) => this.logger.error(`Google Calendar remove failed: ${err.message}`));
+    } else {
+      this.googleCalendarService
+        .syncBookingToCalendar(bookingId)
+        .catch((err) => this.logger.error(`Google Calendar sync failed: ${err.message}`));
+    }
+
+    return updated;
   }
 
   async confirmBooking(
@@ -241,7 +264,7 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id: bookingId },
       data: {
         depositPaid: true,
@@ -253,6 +276,13 @@ export class BookingsService {
         references: true,
       },
     });
+
+    // Sync confirmed booking to Google Calendar
+    this.googleCalendarService
+      .syncBookingToCalendar(bookingId)
+      .catch((err) => this.logger.error(`Google Calendar sync failed: ${err.message}`));
+
+    return updated;
   }
 
   async cancel(bookingId: string, userId: string) {
@@ -268,7 +298,7 @@ export class BookingsService {
       throw new BadRequestException('Cannot cancel a completed booking');
     }
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: 'CANCELLED' },
       include: {
@@ -276,5 +306,12 @@ export class BookingsService {
         references: true,
       },
     });
+
+    // Remove from Google Calendar
+    this.googleCalendarService
+      .removeBookingFromCalendar(bookingId)
+      .catch((err) => this.logger.error(`Google Calendar remove failed: ${err.message}`));
+
+    return updated;
   }
 }

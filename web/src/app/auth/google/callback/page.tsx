@@ -38,11 +38,12 @@ function GoogleCallbackContent() {
           localStorage.setItem("user", JSON.stringify(data.user));
         }
 
-        // If artist connecting calendar, save to profile
+        // If artist connecting calendar, save tokens to calendar service
         if (state === "artist-calendar" && data.googleAccessToken) {
           try {
-            await api.post("/users/profile/google-calendar/connect", {
+            await api.post("/google-calendar/connect", {
               accessToken: data.googleAccessToken,
+              refreshToken: data.googleRefreshToken || undefined,
             });
           } catch (calendarError) {
             console.error("Failed to save calendar connection:", calendarError);

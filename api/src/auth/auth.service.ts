@@ -226,6 +226,8 @@ export class AuthService {
       user: safeUser,
       access_token: jwtToken,
       googleAccessToken: tokens.access_token,
+      googleRefreshToken: tokens.refresh_token || null,
+      hasCalendarAccess: !!user.googleRefreshToken,
     };
   }
 
