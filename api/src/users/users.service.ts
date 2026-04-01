@@ -48,11 +48,19 @@ export class UsersService {
       take: 6,
     });
 
+    const reviewStats = await this.prisma.review.aggregate({
+      where: { userId: id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
     return {
       ...user,
       profileImage: user.profilePhoto,
       styles: [...new Set(portfolio.map(p => p.style).filter(Boolean))],
       portfolio: portfolio.map(p => p.imageUrl),
+      averageRating: reviewStats._avg.rating ? Math.round(reviewStats._avg.rating * 10) / 10 : 0,
+      totalReviews: reviewStats._count.rating,
     };
   }
 

@@ -91,6 +91,7 @@ model User {
   studioMemberships   StudioMember[]
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?
+  reviews             Review[]
 
   @@map("users")
 }
@@ -127,6 +128,7 @@ model Client {
   updatedAt   DateTime  @updatedAt
 
   bookings    Booking[]
+  reviews     Review[]
 
   @@map("clients")
 }
@@ -164,6 +166,7 @@ model Booking {
   updatedAt         DateTime          @updatedAt
 
   references        BookingReference[]
+  review            Review?
 
   @@map("bookings")
 }
@@ -236,6 +239,21 @@ model SpecialDate {
   notes     String?
 
   @@map("special_dates")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
 }
 
 model StudioMember {

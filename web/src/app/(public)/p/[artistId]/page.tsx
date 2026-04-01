@@ -8,9 +8,18 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Instagram, Calendar, Image, X } from "lucide-react";
+import { Instagram, Calendar, Image, X, Star } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/api";
+
+interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  client: { firstName: string };
+  booking: { tattooType: string; bodyLocation: string };
+}
 
 interface ArtistProfile {
   id: string;
@@ -18,6 +27,8 @@ interface ArtistProfile {
   bio: string;
   instagram: string;
   profilePhoto: string;
+  averageRating: number;
+  totalReviews: number;
 }
 
 interface PortfolioItem {
@@ -37,16 +48,21 @@ export default function PublicPortfolioPage() {
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<PortfolioItem | null>(null);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [totalReviews, setTotalReviews] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [profileRes, portfolioRes] = await Promise.all([
+        const [profileRes, portfolioRes, reviewsRes] = await Promise.all([
           api.get(`/users/${artistId}/profile`),
           api.get(`/portfolio/${artistId}`),
+          api.get(`/reviews/artist/${artistId}`),
         ]);
         setArtist(profileRes.data);
         setPortfolio(portfolioRes.data);
+        setReviews(reviewsRes.data.reviews || []);
+        setTotalReviews(reviewsRes.data.totalReviews || 0);
       } catch (error) {
         console.error("Erro ao carregar portfolio:", error);
       } finally {
@@ -108,9 +124,22 @@ export default function PublicPortfolioPage() {
               )}
             </div>
             <div className="text-center sm:text-left flex-1">
-              <h1 className="text-2xl font-mono uppercase tracking-wider font-bold text-foreground">
-                {artist.name}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-mono uppercase tracking-wider font-bold text-foreground">
+                  {artist.name}
+                </h1>
+                {artist.totalReviews > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
+                    <span className="text-sm font-semibold text-foreground">
+                      {artist.averageRating}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      ({artist.totalReviews})
+                    </span>
+                  </div>
+                )}
+              </div>
               {artist.bio && (
                 <p className="text-muted-foreground mt-1 max-w-md">
                   {artist.bio}
@@ -187,6 +216,46 @@ export default function PublicPortfolioPage() {
           </div>
         )}
       </main>
+
+      {/* Reviews Section */}
+      {reviews.length > 0 && (
+        <section className="container mx-auto px-4 py-8 border-t border-border">
+          <h2 className="text-xl font-mono uppercase tracking-wider font-bold text-foreground mb-6">
+            Avaliacoes ({totalReviews})
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {reviews.map((review) => (
+              <Card key={review.id} className="border-border bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i <= review.rating
+                              ? "text-amber-400 fill-amber-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {review.client.firstName}
+                    </span>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-foreground">{review.comment}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {new Date(review.createdAt).toLocaleDateString("pt-BR")}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CTA Bar */}
       <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-card border-t border-border p-4">

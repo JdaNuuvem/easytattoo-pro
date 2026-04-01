@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/typography";
-import { Search, Calendar, Loader2 } from "lucide-react";
+import { Search, Calendar, Loader2, Star } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -63,6 +63,27 @@ export default function MeusAgendamentosPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittedReviews, setSubmittedReviews] = useState<Record<string, { rating: number; comment: string }>>({});
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  async function submitReview(bookingId: string) {
+    if (reviewRating === 0) return;
+    setSubmittingReview(true);
+    try {
+      await api.post("/reviews", { bookingId, rating: reviewRating, comment: reviewComment });
+      setSubmittedReviews(prev => ({ ...prev, [bookingId]: { rating: reviewRating, comment: reviewComment } }));
+      setReviewingId(null);
+      setReviewRating(0);
+      setReviewComment("");
+    } catch {
+      // silently handle
+    } finally {
+      setSubmittingReview(false);
+    }
+  }
 
   const handleSearch = async () => {
     if (phone.length < 10) return;
@@ -208,6 +229,92 @@ export default function MeusAgendamentosPage() {
                       {status.label}
                     </Badge>
                   </div>
+
+                  {/* Review Section for COMPLETED bookings */}
+                  {booking.status === "COMPLETED" && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      {submittedReviews[booking.id] ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i <= submittedReviews[booking.id].rating
+                                    ? "text-amber-400 fill-amber-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          {submittedReviews[booking.id].comment && (
+                            <span className="text-sm text-muted-foreground">
+                              {submittedReviews[booking.id].comment}
+                            </span>
+                          )}
+                        </div>
+                      ) : reviewingId === booking.id ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setReviewRating(i)}
+                                className="focus:outline-none"
+                              >
+                                <Star
+                                  className={`h-6 w-6 cursor-pointer transition-colors ${
+                                    i <= reviewRating
+                                      ? "text-amber-400 fill-amber-400"
+                                      : "text-muted-foreground hover:text-amber-300"
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                          <Input
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder="Deixe um comentario (opcional)"
+                            className="bg-background border-border"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => submitReview(booking.id)}
+                              disabled={reviewRating === 0 || submittingReview}
+                            >
+                              {submittingReview ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                              ) : null}
+                              Enviar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setReviewingId(null);
+                                setReviewRating(0);
+                                setReviewComment("");
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setReviewingId(booking.id)}
+                        >
+                          <Star className="w-4 h-4 mr-1" />
+                          Avaliar
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
