@@ -38,23 +38,14 @@ function GoogleCallbackContent() {
           localStorage.setItem("user", JSON.stringify(data.user));
         }
 
-        // If artist connecting calendar, save tokens to calendar service
-        if (state === "artist-calendar" && data.googleAccessToken) {
-          try {
-            await api.post("/google-calendar/connect", {
-              accessToken: data.googleAccessToken,
-              refreshToken: data.googleRefreshToken || undefined,
-            });
-          } catch (calendarError) {
-            console.error("Failed to save calendar connection:", calendarError);
-          }
-        }
+        // If artist connecting calendar, tokens are already saved by the backend
+        // in googleCallback(). No extra call needed.
 
         // Redirect based on state
         if (state === "booking-calendar") {
           window.history.go(-2);
         } else if (state === "artist-calendar") {
-          router.push("/dashboard/perfil");
+          router.push("/dashboard/horarios");
         } else if (state === "login" || state === "register") {
           const role = data.user?.role;
           if (role === "CLIENT") {
