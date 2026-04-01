@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface CreatePixPaymentDto {
@@ -8,10 +8,13 @@ interface CreatePixPaymentDto {
   value: number;
   description: string;
   artistId: string;
+  bookingId?: string;
 }
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async createPixPayment(dto: CreatePixPaymentDto) {
@@ -56,6 +59,7 @@ export class PaymentsService {
         billingType: 'PIX',
         value: dto.value,
         description: dto.description,
+        externalReference: dto.bookingId || undefined,
         dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
           .toISOString()
           .split('T')[0],
@@ -102,5 +106,30 @@ export class PaymentsService {
     const payment = await response.json();
 
     return { status: payment.status };
+  }
+
+  async handleWebhook(payload: any) {
+    const event = payload.event;
+    const payment = payload.payment;
+
+    if (!payment?.externalReference) {
+      return { received: true };
+    }
+
+    if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
+      const bookingId = payment.externalReference;
+
+      try {
+        await this.prisma.booking.updateMany({
+          where: { id: bookingId, depositPaid: false },
+          data: { depositPaid: true, status: 'CONFIRMED' },
+        });
+        this.logger.log(`Webhook: booking ${bookingId} confirmed via ${event}`);
+      } catch (error) {
+        this.logger.error(`Webhook: failed to update booking ${bookingId}`, error);
+      }
+    }
+
+    return { received: true };
   }
 }

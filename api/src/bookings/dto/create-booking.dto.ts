@@ -140,4 +140,10 @@ export class CreateBookingDto {
   @IsString({ each: true })
   @IsOptional()
   readonly referenceImages?: string[];
+
+  // Consent
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  readonly consentAccepted?: boolean;
 }

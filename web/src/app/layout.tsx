@@ -12,6 +12,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "EasyTattoo Pro",
   description: "Sistema profissional de gerenciamento de estudio de tatuagem",
+  manifest: "/manifest.json",
+  themeColor: "#c9a96e",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
 };
 
 export default function RootLayout({

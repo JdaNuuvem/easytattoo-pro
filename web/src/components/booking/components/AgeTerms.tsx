@@ -11,9 +11,12 @@ import { ShieldCheck, AlertTriangle } from "lucide-react";
 export function AgeTerms() {
   const { goToNextStep, goToPreviousStep } = useBookingNavigation();
   const [accepted, setAccepted] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
+
+  const canContinue = accepted && consentAccepted;
 
   const handleContinue = () => {
-    if (accepted) {
+    if (canContinue) {
       goToNextStep();
     }
   };
@@ -70,9 +73,24 @@ export function AgeTerms() {
         </Label>
       </div>
 
-      {!accepted && (
+      <div className="flex items-start gap-3 p-4 border border-border rounded-sm bg-card">
+        <Checkbox
+          id="consent-terms"
+          checked={consentAccepted}
+          onCheckedChange={(checked) => setConsentAccepted(checked === true)}
+          className="mt-0.5"
+        />
+        <Label
+          htmlFor="consent-terms"
+          className="text-sm text-foreground cursor-pointer leading-relaxed"
+        >
+          Li e aceito os termos de consentimento para a realização da tatuagem.
+        </Label>
+      </div>
+
+      {!canContinue && (
         <Text className="text-xs text-muted-foreground text-center">
-          Você precisa aceitar os termos de maioridade para continuar.
+          Você precisa aceitar todos os termos para continuar.
         </Text>
       )}
 
@@ -83,7 +101,7 @@ export function AgeTerms() {
         <Button
           className="flex-1"
           onClick={handleContinue}
-          disabled={!accepted}
+          disabled={!canContinue}
         >
           Continuar
         </Button>

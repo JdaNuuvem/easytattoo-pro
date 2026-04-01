@@ -270,6 +270,96 @@ export class AnalyticsService {
     };
   }
 
+  async getFinancialReport(
+    userId: string,
+    period?: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const dateFilter = this.buildDateFilter(period || 'year', startDate, endDate);
+
+    // All bookings in period
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        userId,
+        createdAt: dateFilter,
+      },
+      select: {
+        totalPrice: true,
+        depositAmount: true,
+        depositPaid: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    // Group by month
+    const revenueByMonth: Record<string, { received: number; pending: number; cancelled: number; count: number }> = {};
+
+    for (const booking of bookings) {
+      const monthKey = `${booking.createdAt.getFullYear()}-${String(booking.createdAt.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!revenueByMonth[monthKey]) {
+        revenueByMonth[monthKey] = { received: 0, pending: 0, cancelled: 0, count: 0 };
+      }
+
+      revenueByMonth[monthKey].count++;
+
+      if (booking.status === 'CANCELLED') {
+        revenueByMonth[monthKey].cancelled += booking.totalPrice;
+      } else if (booking.status === 'COMPLETED') {
+        revenueByMonth[monthKey].received += booking.totalPrice;
+      } else if (booking.depositPaid) {
+        revenueByMonth[monthKey].received += booking.depositAmount;
+        revenueByMonth[monthKey].pending += booking.totalPrice - booking.depositAmount;
+      } else {
+        revenueByMonth[monthKey].pending += booking.totalPrice;
+      }
+    }
+
+    // Totals
+    const totalReceived = bookings
+      .filter((b) => b.status === 'COMPLETED')
+      .reduce((sum, b) => sum + b.totalPrice, 0);
+
+    const totalPending = bookings
+      .filter((b) => ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(b.status))
+      .reduce((sum, b) => sum + b.totalPrice, 0);
+
+    const totalCancelled = bookings
+      .filter((b) => b.status === 'CANCELLED')
+      .reduce((sum, b) => sum + b.totalPrice, 0);
+
+    // Current month projection
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthData = revenueByMonth[currentMonthKey];
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const projectedMonthlyRevenue = currentMonthData
+      ? Math.round(((currentMonthData.received + currentMonthData.pending) / dayOfMonth) * daysInMonth * 100) / 100
+      : 0;
+
+    // Round values in revenueByMonth
+    const roundedRevenueByMonth: Record<string, { received: number; pending: number; cancelled: number; count: number }> = {};
+    for (const [key, val] of Object.entries(revenueByMonth)) {
+      roundedRevenueByMonth[key] = {
+        received: Math.round(val.received * 100) / 100,
+        pending: Math.round(val.pending * 100) / 100,
+        cancelled: Math.round(val.cancelled * 100) / 100,
+        count: val.count,
+      };
+    }
+
+    return {
+      totalReceived: Math.round(totalReceived * 100) / 100,
+      totalPending: Math.round(totalPending * 100) / 100,
+      totalCancelled: Math.round(totalCancelled * 100) / 100,
+      projectedMonthlyRevenue,
+      revenueByMonth: roundedRevenueByMonth,
+    };
+  }
+
   private buildDateFilter(
     period: string,
     startDate?: string,

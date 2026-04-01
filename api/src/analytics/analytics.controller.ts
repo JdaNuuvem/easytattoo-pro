@@ -100,6 +100,25 @@ export class AnalyticsController {
     );
   }
 
+  @Get('financial')
+  @ApiOperation({ summary: 'Get financial report' })
+  @ApiResponse({ status: 200, description: 'Financial report with revenue by month' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['week', 'month', 'quarter', 'year', 'all'],
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  async getFinancialReport(
+    @CurrentUser('id') userId: string,
+    @Query('period') period?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getFinancialReport(userId, period, startDate, endDate);
+  }
+
   @Get('popular-times')
   @ApiOperation({ summary: 'Get popular booking times' })
   @ApiResponse({

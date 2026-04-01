@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateStudioDto } from './dto/create-studio.dto';
@@ -129,6 +129,99 @@ export class UsersService {
 
     return this.prisma.studio.delete({
       where: { id: studioId },
+    });
+  }
+
+  // Studio Members
+  async getStudioMembers(userId: string, studioId: string) {
+    const studio = await this.prisma.studio.findFirst({
+      where: { id: studioId, userId },
+    });
+
+    if (!studio) {
+      throw new NotFoundException('Studio not found');
+    }
+
+    return this.prisma.studioMember.findMany({
+      where: { studioId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePhoto: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { joinedAt: 'asc' },
+    });
+  }
+
+  async addStudioMember(userId: string, studioId: string, email: string, role?: string) {
+    const studio = await this.prisma.studio.findFirst({
+      where: { id: studioId, userId },
+    });
+
+    if (!studio) {
+      throw new NotFoundException('Studio not found');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('User with this email not found');
+    }
+
+    const existing = await this.prisma.studioMember.findUnique({
+      where: { studioId_userId: { studioId, userId: targetUser.id } },
+    });
+
+    if (existing) {
+      throw new ConflictException('User is already a member of this studio');
+    }
+
+    return this.prisma.studioMember.create({
+      data: {
+        studioId,
+        userId: targetUser.id,
+        role: role || 'MEMBER',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePhoto: true,
+          },
+        },
+      },
+    });
+  }
+
+  async removeStudioMember(userId: string, studioId: string, memberId: string) {
+    const studio = await this.prisma.studio.findFirst({
+      where: { id: studioId, userId },
+    });
+
+    if (!studio) {
+      throw new NotFoundException('Studio not found');
+    }
+
+    const member = await this.prisma.studioMember.findFirst({
+      where: { id: memberId, studioId },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    return this.prisma.studioMember.delete({
+      where: { id: memberId },
     });
   }
 }

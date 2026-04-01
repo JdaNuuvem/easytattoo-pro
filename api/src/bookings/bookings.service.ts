@@ -102,6 +102,8 @@ export class BookingsService {
         estimatedDuration: dto.estimatedDuration,
         totalPrice: priceResult.totalPrice,
         depositAmount: priceResult.depositAmount,
+        consentAccepted: dto.consentAccepted || false,
+        consentAcceptedAt: dto.consentAccepted ? new Date() : null,
       },
       include: {
         client: true,

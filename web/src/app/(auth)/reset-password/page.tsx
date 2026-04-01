@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -23,46 +23,82 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { login, getHomeRouteForRole } from "@/lib/auth";
+import { api } from "@/lib/api";
 import Link from "next/link";
-import { GoogleIcon } from "@/components/ui/google-icon";
-import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
 
-const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
-export default function LoginPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+const resetPasswordSchema = z
+  .object({
+    newPassword: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+    confirmPassword: z.string().min(6, "Confirme sua senha"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    try {
-      const { user } = await login(data.email, data.password);
-      router.push(getHomeRouteForRole(user.role));
-    } catch (error) {
+type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+function ResetPasswordForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const token = searchParams.get("token");
+
+  const form = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { newPassword: "", confirmPassword: "" },
+  });
+
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    if (!token) {
       toast({
         variant: "destructive",
-        title: "Erro ao entrar",
-        description: "Email ou senha incorretos",
+        title: "Erro",
+        description: "Token de redefinição não encontrado.",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await api.post("/auth/reset-password", {
+        token,
+        newPassword: data.newPassword,
+      });
+      toast({
+        title: "Senha redefinida",
+        description: "Sua senha foi alterada com sucesso. Faça login com a nova senha.",
+      });
+      router.push("/login");
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Token inválido ou expirado. Solicite um novo link.",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!token) {
+    return (
+      <Card className="w-full max-w-[400px] mx-4 border-border bg-card">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-xl">Link inválido</CardTitle>
+          <CardDescription>
+            O link de redefinição de senha é inválido ou expirou.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/forgot-password">
+            <Button className="w-full">Solicitar novo link</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-[400px] mx-4 border-border bg-card">
@@ -72,9 +108,9 @@ export default function LoginPage() {
             EasyTattoo Pro
           </h2>
         </div>
-        <CardTitle className="text-xl">Bem-vindo de volta</CardTitle>
+        <CardTitle className="text-xl">Redefinir senha</CardTitle>
         <CardDescription>
-          Entre com seu email e senha para acessar sua conta
+          Digite sua nova senha abaixo.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -82,28 +118,10 @@ export default function LoginPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      className="bg-background border-border focus:ring-primary focus:border-primary"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
+                  <FormLabel>Nova senha</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
@@ -116,63 +134,57 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs text-primary hover:text-primary/80 underline underline-offset-4">
-                Esqueci minha senha
-              </Link>
-            </div>
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirmar senha</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="******"
+                      className="bg-background border-border focus:ring-primary focus:border-primary"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button
               type="submit"
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono uppercase tracking-wider"
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? "Redefinindo..." : "Redefinir senha"}
             </Button>
           </form>
         </Form>
 
-        {isGoogleAuthConfigured() && (
-          <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center gap-3"
-              onClick={() => {
-                const ok = redirectToGoogleAuth("login");
-                if (!ok) {
-                  toast({
-                    variant: "destructive",
-                    title: "Google não configurado",
-                    description: "O login via Google não está disponível no momento.",
-                  });
-                }
-              }}
-            >
-              <GoogleIcon />
-              Entrar com Google
-            </Button>
-          </>
-        )}
-
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Não tem uma conta?{" "}
           <Link
-            href="/register"
+            href="/login"
             className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
           >
-            Criar conta
+            Voltar para login
           </Link>
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <Card className="w-full max-w-[400px] mx-4 border-border bg-card">
+        <CardContent className="p-8 text-center text-muted-foreground">
+          Carregando...
+        </CardContent>
+      </Card>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

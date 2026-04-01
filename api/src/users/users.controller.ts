@@ -108,4 +108,43 @@ export class UsersController {
   ) {
     return this.usersService.deleteStudio(userId, studioId);
   }
+
+  // Studio Members
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('studios/:id/members')
+  @ApiOperation({ summary: 'List studio members' })
+  @ApiResponse({ status: 200, description: 'List of studio members' })
+  async getStudioMembers(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) studioId: string,
+  ) {
+    return this.usersService.getStudioMembers(userId, studioId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('studios/:id/members')
+  @ApiOperation({ summary: 'Add a member to studio by email' })
+  @ApiResponse({ status: 201, description: 'Member added' })
+  async addStudioMember(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) studioId: string,
+    @Body() body: { email: string; role?: string },
+  ) {
+    return this.usersService.addStudioMember(userId, studioId, body.email, body.role);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete('studios/:id/members/:memberId')
+  @ApiOperation({ summary: 'Remove a member from studio' })
+  @ApiResponse({ status: 200, description: 'Member removed' })
+  async removeStudioMember(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) studioId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.usersService.removeStudioMember(userId, studioId, memberId);
+  }
 }
