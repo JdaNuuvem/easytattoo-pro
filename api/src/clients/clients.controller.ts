@@ -51,8 +51,11 @@ export class ClientsController {
   @ApiOperation({ summary: 'Get a client by ID' })
   @ApiResponse({ status: 200, description: 'Client details' })
   @ApiResponse({ status: 404, description: 'Client not found' })
-  async findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.clientsService.findById(id);
+  async findById(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.clientsService.findById(id, userId);
   }
 
   @Get(':id/bookings')

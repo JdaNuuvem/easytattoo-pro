@@ -1,5 +1,6 @@
-import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Headers, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { PaymentsService } from './payments.service';
 
 @ApiTags('Payments')
@@ -31,9 +32,17 @@ export class PaymentsController {
   }
 
   @Post('webhook')
+  @SkipThrottle()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Asaas webhook for payment notifications' })
-  async handleWebhook(@Body() body: any) {
+  async handleWebhook(
+    @Body() body: any,
+    @Headers('asaas-access-token') webhookToken: string,
+  ) {
+    const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
+    if (expectedToken && webhookToken !== expectedToken) {
+      throw new UnauthorizedException('Invalid webhook token');
+    }
     return this.paymentsService.handleWebhook(body);
   }
 }

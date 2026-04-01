@@ -205,6 +205,36 @@ export class BookingsService {
     return booking;
   }
 
+  async findByIdPublic(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        client: {
+          select: { firstName: true, lastName: true },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: true,
+            instagram: true,
+            pixKey: true,
+            pixName: true,
+            pixBank: true,
+          },
+        },
+        studio: { select: { name: true } },
+        references: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return booking;
+  }
+
   async updateStatus(bookingId: string, userId: string, status: string) {
     const booking = await this.prisma.booking.findFirst({
       where: { id: bookingId, userId },

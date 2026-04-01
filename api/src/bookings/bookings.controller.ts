@@ -68,11 +68,11 @@ export class BookingsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a booking by ID' })
+  @ApiOperation({ summary: 'Get a booking by ID (public, sanitized)' })
   @ApiResponse({ status: 200, description: 'Booking details' })
   @ApiResponse({ status: 404, description: 'Booking not found' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.bookingsService.findById(id);
+    return this.bookingsService.findByIdPublic(id);
   }
 
   @Put(':id/status')

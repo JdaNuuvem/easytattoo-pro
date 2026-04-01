@@ -22,12 +22,13 @@ export class ClientsService {
     };
 
     if (search) {
+      const sanitized = search.slice(0, 100).trim();
       where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { instagram: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: sanitized, mode: 'insensitive' } },
+        { lastName: { contains: sanitized, mode: 'insensitive' } },
+        { phone: { contains: sanitized } },
+        { email: { contains: sanitized, mode: 'insensitive' } },
+        { instagram: { contains: sanitized, mode: 'insensitive' } },
       ];
     }
 
@@ -73,21 +74,25 @@ export class ClientsService {
     };
   }
 
-  async findById(clientId: string) {
+  async findById(clientId: string, userId: string) {
     const client = await this.prisma.client.findUnique({
       where: { id: clientId },
       include: {
+        bookings: { where: { userId }, take: 1 },
         _count: {
-          select: { bookings: true },
+          select: {
+            bookings: { where: { userId } },
+          },
         },
       },
     });
 
-    if (!client) {
+    if (!client || client.bookings.length === 0) {
       throw new NotFoundException('Client not found');
     }
 
-    return client;
+    const { bookings, ...clientData } = client;
+    return clientData;
   }
 
   async findBookings(clientId: string, userId: string) {

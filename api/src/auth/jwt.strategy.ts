@@ -12,10 +12,16 @@ interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly usersService: UsersService) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || secret === 'easytattoo-jwt-secret-dev') {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_SECRET must be set in production');
+      }
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'easytattoo-jwt-secret-dev',
+      secretOrKey: secret || 'easytattoo-jwt-secret-dev',
     });
   }
 

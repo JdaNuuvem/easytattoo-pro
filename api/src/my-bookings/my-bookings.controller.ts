@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +20,7 @@ export class MyBookingsController {
   constructor(private readonly myBookingsService: MyBookingsService) {}
 
   @Get('by-phone')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Look up bookings by phone number (no auth required)' })
   @ApiResponse({ status: 200, description: 'Bookings for the given phone' })
   async findByPhone(@Query('phone') phone: string) {

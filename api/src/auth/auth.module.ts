@@ -10,10 +10,18 @@ import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'easytattoo-jwt-secret-dev',
-      signOptions: {
-        expiresIn: process.env.JWT_EXPIRATION || '7d',
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret || secret === 'easytattoo-jwt-secret-dev') {
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error('JWT_SECRET must be set in production');
+          }
+        }
+        return {
+          secret: secret || 'easytattoo-jwt-secret-dev',
+          signOptions: { expiresIn: process.env.JWT_EXPIRATION || '7d' },
+        };
       },
     }),
     UsersModule,

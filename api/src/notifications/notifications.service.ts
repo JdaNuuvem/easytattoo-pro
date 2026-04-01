@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as nodemailer from 'nodemailer';
 
@@ -7,6 +7,33 @@ export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  private validateExternalUrl(url: string): void {
+    try {
+      const parsed = new URL(url);
+      const hostname = parsed.hostname.toLowerCase();
+      const blocked = ['localhost', '127.0.0.1', '0.0.0.0', '::1', 'metadata.google.internal'];
+      if (
+        blocked.includes(hostname) ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('172.16.') ||
+        hostname.startsWith('172.17.') ||
+        hostname.startsWith('172.18.') ||
+        hostname.startsWith('172.19.') ||
+        hostname.startsWith('172.2') ||
+        hostname.startsWith('172.30.') ||
+        hostname.startsWith('172.31.') ||
+        hostname.endsWith('.internal') ||
+        hostname.endsWith('.local')
+      ) {
+        throw new Error('Blocked host');
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException('Invalid URL');
+    }
+  }
 
   async sendWhatsAppBookingConfirmation(data: {
     bookingId: string;
@@ -25,6 +52,8 @@ export class NotificationsService {
     if (!artist?.evolutionApiUrl || !artist?.evolutionApiKey) {
       return { sent: false, reason: 'WhatsApp not configured' };
     }
+
+    this.validateExternalUrl(artist.evolutionApiUrl);
 
     const message = [
       `Olá ${data.clientName}! 🎨`,
@@ -67,6 +96,8 @@ export class NotificationsService {
     evolutionInstanceName: string;
     phone: string;
   }) {
+    this.validateExternalUrl(data.evolutionApiUrl);
+
     const phone = data.phone.replace(/\D/g, '');
 
     const response = await fetch(
