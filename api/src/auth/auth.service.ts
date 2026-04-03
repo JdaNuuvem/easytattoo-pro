@@ -38,57 +38,62 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const role = dto.role || 'ARTIST';
+    try {
+      const role = dto.role || 'ARTIST';
 
-    if ((role as string) === 'ADMIN') {
-      throw new BadRequestException('Cannot register as ADMIN');
-    }
+      if ((role as string) === 'ADMIN') {
+        throw new BadRequestException('Cannot register as ADMIN');
+      }
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
 
-    if (existingUser) {
-      throw new ConflictException('Email already registered');
-    }
+      if (existingUser) {
+        throw new ConflictException('Email already registered');
+      }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
+      const hashedPassword = await bcrypt.hash(dto.password, 12);
 
-    const user = await this.prisma.user.create({
-      data: {
-        name: dto.name,
-        email: dto.email,
-        password: hashedPassword,
-        role,
-        phone: dto.phone,
-      },
-    });
-
-    // If CLIENT, create linked Client profile
-    if (role === 'CLIENT') {
-      const nameParts = dto.name.trim().split(/\s+/);
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ') || firstName;
-
-      await this.prisma.client.create({
+      const user = await this.prisma.user.create({
         data: {
-          firstName,
-          lastName,
-          phone: dto.phone || '',
+          name: dto.name,
           email: dto.email,
-          userId: user.id,
+          password: hashedPassword,
+          role,
+          phone: dto.phone,
         },
       });
+
+      // If CLIENT, create linked Client profile
+      if (role === 'CLIENT') {
+        const nameParts = dto.name.trim().split(/\s+/);
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || firstName;
+
+        await this.prisma.client.create({
+          data: {
+            firstName,
+            lastName,
+            phone: dto.phone || '',
+            email: dto.email,
+            userId: user.id,
+          },
+        });
+      }
+
+      const token = this.generateToken(user.id, user.email, user.role);
+
+      const { password, ...userWithoutPassword } = user;
+
+      return {
+        user: userWithoutPassword,
+        access_token: token,
+      };
+    } catch (error) {
+      console.error('[REGISTER ERROR]', error);
+      throw error;
     }
-
-    const token = this.generateToken(user.id, user.email, user.role);
-
-    const { password, ...userWithoutPassword } = user;
-
-    return {
-      user: userWithoutPassword,
-      access_token: token,
-    };
   }
 
   async login(dto: LoginDto) {
