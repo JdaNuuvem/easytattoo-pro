@@ -1,9 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/typography";
 import { useBookingStore } from "@/stores/booking";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
@@ -13,462 +11,761 @@ import {
   formatTime,
 } from "@/components/booking/pricing/calculator";
 import { PriceEstimate } from "./PriceEstimate";
-import { Clock, DollarSign, ChevronRight } from "lucide-react";
+import { Clock, DollarSign, RotateCcw, ChevronRight } from "lucide-react";
 
-function BodyPartIcon({ locationId, isSelected }: { locationId: string; isSelected: boolean }) {
-  const color = isSelected ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))";
-  const opacity = isSelected ? 1 : 0.5;
-  const cls = "w-10 h-10";
+type ViewSide = "front" | "back";
 
-  const icons: Record<string, React.ReactNode> = {
-    // Braço - ícone de bíceps flexionado
-    arm: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M12 36 L12 28 Q12 18 20 14 L24 12 Q28 10 30 14 L32 20 Q34 26 30 28 L26 30" />
-          <path d="M26 30 L26 36" />
-          <ellipse cx="28" cy="18" rx="4" ry="6" />
-        </g>
-      </svg>
-    ),
-    // Perna - ícone de perna
-    leg: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M18 6 Q16 6 16 10 L14 24 L14 36 Q14 40 18 42 L24 44" />
-          <path d="M30 6 Q32 6 32 10 L30 24 L30 36 Q30 40 26 42" />
-          <circle cx="22" cy="24" r="3" />
-        </g>
-      </svg>
-    ),
-    // Mão - ícone de mão aberta
-    hand: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M24 44 Q16 44 14 38 L12 30 L10 26 Q9 24 11 23 L13 24 L14 28" />
-          <path d="M14 28 L14 12 Q14 10 16 10 Q18 10 18 12 L18 24" />
-          <path d="M18 24 L18 8 Q18 6 20 6 Q22 6 22 8 L22 24" />
-          <path d="M22 24 L22 8 Q22 6 24 6 Q26 6 26 8 L26 24" />
-          <path d="M26 24 L26 10 Q26 8 28 8 Q30 8 30 10 L30 26" />
-          <path d="M30 26 L32 22 Q33 20 35 21 Q36 22 35 24 L30 34 Q28 38 24 44" />
-        </g>
-      </svg>
-    ),
-    // Dedos - ícone de dedos
-    fingers: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M16 38 L16 14 Q16 10 18 10 Q20 10 20 14 L20 38" />
-          <path d="M22 38 L22 8 Q22 4 24 4 Q26 4 26 8 L26 38" />
-          <path d="M28 38 L28 12 Q28 8 30 8 Q32 8 32 12 L32 38" />
-          <line x1="16" y1="38" x2="32" y2="38" />
-        </g>
-      </svg>
-    ),
-    // Pé - ícone de pé/pegada
-    foot: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M16 8 Q14 8 14 12 L12 28 Q10 36 14 40 Q18 44 26 44 Q34 44 36 38 Q38 32 34 28 L32 26" />
-          <ellipse cx="18" cy="10" rx="3" ry="4" />
-          <ellipse cx="24" cy="8" rx="2.5" ry="3.5" />
-          <ellipse cx="29" cy="10" rx="2.5" ry="3.5" />
-          <ellipse cx="33" cy="14" rx="2" ry="3" />
-        </g>
-      </svg>
-    ),
-    // Joelho - ícone de joelho dobrado
-    knee: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M20 4 L18 16 Q16 24 20 26" />
-          <path d="M28 4 L30 16 Q32 24 28 26" />
-          <circle cx="24" cy="24" r="6" strokeDasharray="2 2" />
-          <path d="M20 26 Q18 30 20 44" />
-          <path d="M28 26 Q30 30 28 44" />
-        </g>
-      </svg>
-    ),
-    // Cotovelo - ícone de braço dobrado
-    elbow: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M10 8 L10 20 Q10 28 18 28 L30 28 Q38 28 38 36 L38 44" />
-          <circle cx="24" cy="28" r="5" strokeDasharray="2 2" />
-        </g>
-      </svg>
-    ),
-    // Pescoço - ícone de pescoço com cabeça
-    neck: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <ellipse cx="24" cy="14" rx="10" ry="12" />
-          <path d="M18 24 L16 36 Q16 44 24 44 Q32 44 32 36 L30 24" />
-          <rect x="18" y="22" width="12" height="10" rx="2" fill={isSelected ? color : "none"} fillOpacity="0.15" />
-        </g>
-      </svg>
-    ),
-    // Nuca - ícone de cabeça vista de trás
-    nape: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <ellipse cx="24" cy="16" rx="10" ry="12" />
-          <path d="M18 26 L16 38" />
-          <path d="M30 26 L32 38" />
-          <rect x="19" y="24" width="10" height="8" rx="2" fill={isSelected ? color : "none"} fillOpacity="0.15" />
-          <line x1="20" y1="10" x2="28" y2="10" />
-          <line x1="19" y1="14" x2="29" y2="14" />
-        </g>
-      </svg>
-    ),
-    // Rosto - ícone de rosto
-    face: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <ellipse cx="24" cy="22" rx="12" ry="14" />
-          <circle cx="18" cy="20" r="1.5" fill={color} />
-          <circle cx="30" cy="20" r="1.5" fill={color} />
-          <path d="M20 28 Q24 32 28 28" />
-          <line x1="24" y1="22" x2="24" y2="26" />
-        </g>
-      </svg>
-    ),
-    // Cabeça - ícone de cabeça (perfil)
-    head: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M14 24 Q14 8 24 8 Q34 8 34 24 Q34 30 30 34 L30 40 L18 40 L18 34 Q14 30 14 24Z" />
-          <line x1="18" y1="40" x2="30" y2="40" />
-          <path d="M18 16 Q24 12 30 16" />
-        </g>
-      </svg>
-    ),
-    // Costas - ícone de costas (torso visto de trás)
-    back: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M14 8 L14 38 Q14 42 18 42 L30 42 Q34 42 34 38 L34 8" />
-          <line x1="24" y1="8" x2="24" y2="42" strokeDasharray="3 3" />
-          <path d="M16 14 Q24 18 32 14" />
-          <path d="M16 26 Q24 30 32 26" />
-        </g>
-      </svg>
-    ),
-    // Peito - ícone de peito (torso frontal)
-    chest: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M12 8 Q12 4 16 4 L32 4 Q36 4 36 8 L36 32 Q36 38 30 40 L24 42 L18 40 Q12 38 12 32 Z" />
-          <path d="M18 14 Q20 18 24 16 Q28 18 30 14" />
-          <line x1="24" y1="20" x2="24" y2="34" strokeDasharray="2 2" />
-        </g>
-      </svg>
-    ),
-    // Costela - ícone de costelas
-    ribs: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <line x1="24" y1="6" x2="24" y2="42" />
-          <path d="M24 10 Q32 12 36 16" />
-          <path d="M24 10 Q16 12 12 16" />
-          <path d="M24 18 Q32 20 36 24" />
-          <path d="M24 18 Q16 20 12 24" />
-          <path d="M24 26 Q32 28 34 30" />
-          <path d="M24 26 Q16 28 14 30" />
-          <path d="M24 34 Q30 35 32 36" />
-          <path d="M24 34 Q18 35 16 36" />
-        </g>
-      </svg>
-    ),
-    // Esterno - ícone de esterno (centro do peito)
-    sternum: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M14 8 L34 8 Q36 8 36 12 L36 28 Q36 36 24 42 Q12 36 12 28 L12 12 Q12 8 14 8Z" />
-          <line x1="24" y1="8" x2="24" y2="36" />
-          <rect x="20" y="12" width="8" height="20" rx="2" fill={isSelected ? color : "none"} fillOpacity="0.15" />
-        </g>
-      </svg>
-    ),
-    // Partes Íntimas - ícone discreto (escudo/privacidade)
-    intimate: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M12 10 L24 6 L36 10 L36 24 Q36 38 24 44 Q12 38 12 24 Z" />
-          <path d="M20 22 L24 26 L32 18" />
-        </g>
-      </svg>
-    ),
-    // Pulso (wrist) - caso exista
-    wrist: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M18 6 L18 20 Q18 24 16 28 L14 34 Q12 38 16 40 L24 44 L32 40 Q36 38 34 34 L32 28 Q30 24 30 20 L30 6" />
-          <line x1="16" y1="18" x2="32" y2="18" strokeDasharray="2 2" />
-          <circle cx="24" cy="18" r="4" fill={isSelected ? color : "none"} fillOpacity="0.15" />
-        </g>
-      </svg>
-    ),
-    // Tornozelo (ankle)
-    ankle: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M18 4 L16 28 Q14 34 16 38 L22 42 L32 42 Q36 42 36 38 L36 34" />
-          <path d="M30 4 L32 28" />
-          <circle cx="24" cy="30" r="5" strokeDasharray="2 2" />
-        </g>
-      </svg>
-    ),
-    // Barriga/Estômago (stomach)
-    stomach: (
-      <svg viewBox="0 0 48 48" className={cls} xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-          <path d="M14 6 L34 6 L36 20 Q36 36 24 42 Q12 36 12 20 Z" />
-          <ellipse cx="24" cy="22" rx="6" ry="4" />
-          <circle cx="24" cy="22" r="1.5" fill={color} />
-        </g>
-      </svg>
-    ),
-  };
-
-  // Para sub-locations, usar o ícone do parent
-  const parentMap: Record<string, string> = {
-    "arm-forearm": "arm",
-    "arm-biceps": "arm",
-    "arm-triceps": "arm",
-    "leg-thigh": "leg",
-    "leg-shin": "leg",
-    "leg-calf": "leg",
-    "back-cervical": "back",
-    "back-thoracic": "back",
-    "back-lumbar": "back",
-  };
-
-  const iconKey = parentMap[locationId] || locationId;
-  return <>{icons[iconKey] || icons.arm}</>;
+interface BodyZone {
+  id: string;
+  path: string;
+  label: string;
+  labelPos: { x: number; y: number };
 }
 
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.04 } },
-};
+// Viewbox: 0 0 330 440. Body centered at x=165, wider proportions.
+const FRONT_ZONES: BodyZone[] = [
+  // Head top
+  {
+    id: "head",
+    path: "M 147,5 Q 147,0 165,0 Q 183,0 183,5 L 183,15 Q 183,10 165,12 Q 147,10 147,15 Z",
+    label: "Cabeca",
+    labelPos: { x: 165, y: 7 },
+  },
+  // Face
+  {
+    id: "face",
+    path: "M 147,15 Q 143,15 143,28 L 143,42 Q 143,56 165,56 Q 187,56 187,42 L 187,28 Q 187,15 183,15 Z",
+    label: "Rosto",
+    labelPos: { x: 165, y: 36 },
+  },
+  // Neck
+  {
+    id: "neck",
+    path: "M 153,56 L 153,70 L 177,70 L 177,56 Q 165,62 153,56 Z",
+    label: "Pescoco",
+    labelPos: { x: 165, y: 63 },
+  },
+  // Chest (wide torso)
+  {
+    id: "chest",
+    path: "M 110,76 L 153,70 L 177,70 L 220,76 L 220,120 Q 165,126 110,120 Z",
+    label: "Peito",
+    labelPos: { x: 165, y: 98 },
+  },
+  // Sternum (center strip over chest)
+  {
+    id: "sternum",
+    path: "M 155,72 L 175,72 L 175,118 Q 165,122 155,118 Z",
+    label: "Esterno",
+    labelPos: { x: 165, y: 96 },
+  },
+  // Left ribs
+  {
+    id: "ribs",
+    path: "M 108,120 L 110,76 L 100,84 L 92,120 L 96,148 L 110,156 L 125,148 Z",
+    label: "Costela E.",
+    labelPos: { x: 108, y: 118 },
+  },
+  // Right ribs
+  {
+    id: "ribs",
+    path: "M 222,120 L 220,76 L 230,84 L 238,120 L 234,148 L 220,156 L 205,148 Z",
+    label: "Costela D.",
+    labelPos: { x: 222, y: 118 },
+  },
+  // Stomach / Abdomen
+  {
+    id: "stomach",
+    path: "M 125,120 L 205,120 L 205,156 Q 165,164 125,156 Z",
+    label: "Barriga",
+    labelPos: { x: 165, y: 140 },
+  },
+  // Intimate / Hip
+  {
+    id: "intimate",
+    path: "M 120,156 L 210,156 L 200,185 Q 165,195 130,185 Z",
+    label: "Intima",
+    labelPos: { x: 165, y: 172 },
+  },
+  // Left upper arm (biceps/triceps)
+  {
+    id: "arm",
+    path: "M 110,76 L 92,80 L 78,88 L 68,130 L 80,130 L 88,96 L 100,84 L 108,120 Z",
+    label: "Braco E.",
+    labelPos: { x: 88, y: 104 },
+  },
+  // Left elbow
+  {
+    id: "elbow",
+    path: "M 66,126 Q 63,134 67,142 L 82,142 Q 84,134 82,126 Z",
+    label: "Cotovelo",
+    labelPos: { x: 74, y: 134 },
+  },
+  // Left forearm
+  {
+    id: "arm-forearm",
+    path: "M 65,144 L 80,144 L 72,195 L 66,200 L 56,195 Z",
+    label: "Antebraco E.",
+    labelPos: { x: 68, y: 170 },
+  },
+  // Left wrist + hand
+  {
+    id: "hand",
+    path: "M 54,197 L 74,197 L 76,218 L 70,225 L 64,225 L 58,222 L 52,218 Z",
+    label: "Mao E.",
+    labelPos: { x: 64, y: 210 },
+  },
+  // Left fingers
+  {
+    id: "fingers",
+    path: "M 52,220 L 76,220 L 78,236 L 74,242 L 66,242 L 58,240 L 50,236 Z",
+    label: "Dedos",
+    labelPos: { x: 64, y: 232 },
+  },
+  // Right upper arm
+  {
+    id: "arm",
+    path: "M 220,76 L 238,80 L 252,88 L 262,130 L 250,130 L 242,96 L 230,84 L 222,120 Z",
+    label: "Braco D.",
+    labelPos: { x: 242, y: 104 },
+  },
+  // Right elbow
+  {
+    id: "elbow",
+    path: "M 248,126 Q 250,134 248,142 L 264,142 Q 267,134 264,126 Z",
+    label: "Cotovelo",
+    labelPos: { x: 256, y: 134 },
+  },
+  // Right forearm
+  {
+    id: "arm-forearm",
+    path: "M 250,144 L 265,144 L 274,195 L 264,200 L 258,195 Z",
+    label: "Antebraco D.",
+    labelPos: { x: 262, y: 170 },
+  },
+  // Right hand
+  {
+    id: "hand",
+    path: "M 256,197 L 276,197 L 278,218 L 272,222 L 266,225 L 260,225 L 254,218 Z",
+    label: "Mao D.",
+    labelPos: { x: 266, y: 210 },
+  },
+  // Right fingers
+  {
+    id: "fingers",
+    path: "M 254,220 L 278,220 L 280,236 L 272,240 L 264,242 L 256,242 L 252,236 Z",
+    label: "Dedos",
+    labelPos: { x: 266, y: 232 },
+  },
+  // Left thigh
+  {
+    id: "leg",
+    path: "M 128,188 L 165,196 L 165,276 L 140,276 L 125,230 Z",
+    label: "Coxa E.",
+    labelPos: { x: 148, y: 235 },
+  },
+  // Right thigh
+  {
+    id: "leg",
+    path: "M 202,188 L 165,196 L 165,276 L 190,276 L 205,230 Z",
+    label: "Coxa D.",
+    labelPos: { x: 182, y: 235 },
+  },
+  // Left knee
+  {
+    id: "knee",
+    path: "M 138,272 L 165,276 L 165,296 L 140,296 Z",
+    label: "Joelho",
+    labelPos: { x: 152, y: 284 },
+  },
+  // Right knee
+  {
+    id: "knee",
+    path: "M 192,272 L 165,276 L 165,296 L 190,296 Z",
+    label: "Joelho",
+    labelPos: { x: 178, y: 284 },
+  },
+  // Left shin
+  {
+    id: "leg-shin",
+    path: "M 138,298 L 165,298 L 162,378 L 144,378 Z",
+    label: "Canela E.",
+    labelPos: { x: 152, y: 340 },
+  },
+  // Right shin
+  {
+    id: "leg-shin",
+    path: "M 165,298 L 192,298 L 186,378 L 168,378 Z",
+    label: "Canela D.",
+    labelPos: { x: 178, y: 340 },
+  },
+  // Left ankle + foot
+  {
+    id: "foot",
+    path: "M 142,380 L 164,380 L 164,410 L 136,410 L 134,400 Z",
+    label: "Pe E.",
+    labelPos: { x: 150, y: 396 },
+  },
+  // Right foot
+  {
+    id: "foot",
+    path: "M 166,380 L 188,380 L 196,400 L 194,410 L 166,410 Z",
+    label: "Pe D.",
+    labelPos: { x: 180, y: 396 },
+  },
+];
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0 },
-};
+const BACK_ZONES: BodyZone[] = [
+  // Head back
+  {
+    id: "head",
+    path: "M 147,5 Q 147,0 165,0 Q 183,0 183,5 L 183,15 Q 183,10 165,12 Q 147,10 147,15 Z",
+    label: "Cabeca",
+    labelPos: { x: 165, y: 7 },
+  },
+  // Nape (back of head)
+  {
+    id: "nape",
+    path: "M 147,15 Q 143,15 143,28 L 143,42 Q 143,56 165,56 Q 187,56 187,42 L 187,28 Q 187,15 183,15 Z",
+    label: "Nuca",
+    labelPos: { x: 165, y: 36 },
+  },
+  // Neck back
+  {
+    id: "neck",
+    path: "M 153,56 L 153,70 L 177,70 L 177,56 Q 165,62 153,56 Z",
+    label: "Pescoco",
+    labelPos: { x: 165, y: 63 },
+  },
+  // Upper back (cervical)
+  {
+    id: "back-cervical",
+    path: "M 110,76 L 153,70 L 177,70 L 220,76 L 220,106 Q 165,112 110,106 Z",
+    label: "Cervical",
+    labelPos: { x: 165, y: 90 },
+  },
+  // Mid back (thoracic)
+  {
+    id: "back-thoracic",
+    path: "M 108,106 L 222,106 L 222,140 Q 165,146 108,140 Z",
+    label: "Toracica",
+    labelPos: { x: 165, y: 124 },
+  },
+  // Lower back (lumbar)
+  {
+    id: "back-lumbar",
+    path: "M 112,140 L 218,140 L 210,164 Q 165,170 120,164 Z",
+    label: "Lombar",
+    labelPos: { x: 165, y: 152 },
+  },
+  // Left arm back
+  {
+    id: "arm",
+    path: "M 110,76 L 92,80 L 78,88 L 68,130 L 80,130 L 88,96 L 100,84 L 108,120 Z",
+    label: "Braco E.",
+    labelPos: { x: 88, y: 104 },
+  },
+  // Left elbow back
+  {
+    id: "elbow",
+    path: "M 66,126 Q 63,134 67,142 L 82,142 Q 84,134 82,126 Z",
+    label: "Cotovelo",
+    labelPos: { x: 74, y: 134 },
+  },
+  // Left forearm back
+  {
+    id: "arm-forearm",
+    path: "M 65,144 L 80,144 L 72,195 L 66,200 L 56,195 Z",
+    label: "Antebraco E.",
+    labelPos: { x: 68, y: 170 },
+  },
+  // Left hand back
+  {
+    id: "hand",
+    path: "M 54,197 L 74,197 L 76,218 L 70,225 L 64,225 L 58,222 L 52,218 Z",
+    label: "Mao E.",
+    labelPos: { x: 64, y: 210 },
+  },
+  // Right arm back
+  {
+    id: "arm",
+    path: "M 220,76 L 238,80 L 252,88 L 262,130 L 250,130 L 242,96 L 230,84 L 222,120 Z",
+    label: "Braco D.",
+    labelPos: { x: 242, y: 104 },
+  },
+  // Right elbow back
+  {
+    id: "elbow",
+    path: "M 248,126 Q 250,134 248,142 L 264,142 Q 267,134 264,126 Z",
+    label: "Cotovelo",
+    labelPos: { x: 256, y: 134 },
+  },
+  // Right forearm back
+  {
+    id: "arm-forearm",
+    path: "M 250,144 L 265,144 L 274,195 L 264,200 L 258,195 Z",
+    label: "Antebraco D.",
+    labelPos: { x: 262, y: 170 },
+  },
+  // Right hand back
+  {
+    id: "hand",
+    path: "M 256,197 L 276,197 L 278,218 L 272,222 L 266,225 L 260,225 L 254,218 Z",
+    label: "Mao D.",
+    labelPos: { x: 266, y: 210 },
+  },
+  // Butt / intimate
+  {
+    id: "intimate",
+    path: "M 120,164 L 210,164 L 200,192 Q 165,200 130,192 Z",
+    label: "Gluteo",
+    labelPos: { x: 165, y: 178 },
+  },
+  // Left thigh back
+  {
+    id: "leg",
+    path: "M 128,194 L 165,200 L 165,276 L 140,276 L 125,236 Z",
+    label: "Coxa E.",
+    labelPos: { x: 148, y: 238 },
+  },
+  // Right thigh back
+  {
+    id: "leg",
+    path: "M 202,194 L 165,200 L 165,276 L 190,276 L 205,236 Z",
+    label: "Coxa D.",
+    labelPos: { x: 182, y: 238 },
+  },
+  // Left knee back
+  {
+    id: "knee",
+    path: "M 138,272 L 165,276 L 165,296 L 140,296 Z",
+    label: "Joelho",
+    labelPos: { x: 152, y: 284 },
+  },
+  // Right knee back
+  {
+    id: "knee",
+    path: "M 192,272 L 165,276 L 165,296 L 190,296 Z",
+    label: "Joelho",
+    labelPos: { x: 178, y: 284 },
+  },
+  // Left calf
+  {
+    id: "leg-calf",
+    path: "M 138,298 L 165,298 L 162,378 L 144,378 Z",
+    label: "Panturr. E.",
+    labelPos: { x: 152, y: 340 },
+  },
+  // Right calf
+  {
+    id: "leg-calf",
+    path: "M 165,298 L 192,298 L 186,378 L 168,378 Z",
+    label: "Panturr. D.",
+    labelPos: { x: 178, y: 340 },
+  },
+  // Left foot back
+  {
+    id: "foot",
+    path: "M 142,380 L 164,380 L 164,410 L 136,410 L 134,400 Z",
+    label: "Pe E.",
+    labelPos: { x: 150, y: 396 },
+  },
+  // Right foot back
+  {
+    id: "foot",
+    path: "M 166,380 L 188,380 L 196,400 L 194,410 L 166,410 Z",
+    label: "Pe D.",
+    labelPos: { x: 180, y: 396 },
+  },
+];
+
+function getPainColor(additionalPrice: number): string {
+  if (additionalPrice === 0) return "hsl(180, 70%, 50%)";      // cyan - sem custo extra
+  if (additionalPrice <= 50) return "hsl(60, 80%, 55%)";       // amarelo
+  if (additionalPrice <= 100) return "hsl(30, 90%, 55%)";      // laranja
+  if (additionalPrice <= 150) return "hsl(10, 85%, 55%)";      // vermelho-laranja
+  return "hsl(0, 80%, 45%)";                                     // vermelho escuro
+}
+
+function getZonePrice(
+  zoneId: string,
+  bodyLocations: { id: string; additionalPrice: number }[]
+): number {
+  const loc = bodyLocations.find((l) => l.id === zoneId);
+  return loc?.additionalPrice ?? 0;
+}
 
 export function BodyLocation() {
   const { tattooDetails, updateTattooDetails, pricingConfig } =
     useBookingStore();
   const { goToNextStep, goToPreviousStep } = useBookingNavigation();
+  const [viewSide, setViewSide] = useState<ViewSide>("front");
+  const [hoveredZone, setHoveredZone] = useState<string | null>(null);
   const [expandedParent, setExpandedParent] = useState<string | null>(null);
 
-  // Separate parent locations (no parentId) from sub-locations
-  const parentLocations = pricingConfig.bodyLocations.filter((l) => !l.parentId);
+  const zones = viewSide === "front" ? FRONT_ZONES : BACK_ZONES;
+
   const hasChildren = (parentId: string) =>
     pricingConfig.bodyLocations.some((l) => l.parentId === parentId);
   const getChildren = (parentId: string) =>
     pricingConfig.bodyLocations.filter((l) => l.parentId === parentId);
 
-  const handleLocationChange = (location: string) => {
-    const loc = pricingConfig.bodyLocations.find((l) => l.id === location);
-    // If parent with children, expand sub-choices instead of selecting
-    if (loc && !loc.parentId && hasChildren(location)) {
-      setExpandedParent(expandedParent === location ? null : location);
+  const isSelected = (zoneId: string) => {
+    if (tattooDetails.bodyLocation === zoneId) return true;
+    return pricingConfig.bodyLocations.some(
+      (l) => l.parentId === zoneId && l.id === tattooDetails.bodyLocation
+    );
+  };
+
+  const handleZoneClick = (zoneId: string) => {
+    if (hasChildren(zoneId)) {
+      setExpandedParent(expandedParent === zoneId ? null : zoneId);
       return;
     }
-    updateTattooDetails({ bodyLocation: location });
+    updateTattooDetails({ bodyLocation: zoneId });
+    setExpandedParent(null);
   };
 
   const handleSubLocationChange = (location: string) => {
     updateTattooDetails({ bodyLocation: location });
+    setExpandedParent(null);
   };
 
-  // Check if current selection is a child of a parent
-  const selectedIsChildOf = (parentId: string) =>
-    getChildren(parentId).some((c) => c.id === tattooDetails.bodyLocation);
+  const selectedLocation = pricingConfig.bodyLocations.find(
+    (l) => l.id === tattooDetails.bodyLocation
+  );
+
+  const hoveredLocation = hoveredZone
+    ? pricingConfig.bodyLocations.find((l) => l.id === hoveredZone)
+    : null;
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="space-y-3">
         <Text className="text-muted-foreground">
-          Onde você quer fazer a tatuagem?
+          Toque na parte do corpo onde deseja fazer a tatuagem
         </Text>
 
         <div className="flex items-start gap-2 text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-md px-3 py-2">
-          <span className="shrink-0 mt-0.5">⚠️</span>
+          <span className="shrink-0 mt-0.5">&#9888;&#65039;</span>
           <span>
-            O valor pode variar pela dificuldade da área do corpo escolhida. Se quiser mudar o local no dia, o valor pode diminuir ou aumentar.
+            O valor pode variar pela dificuldade da area do corpo escolhida. Se
+            quiser mudar o local no dia, o valor pode diminuir ou aumentar.
           </span>
         </div>
+      </div>
 
-        <RadioGroup
-          value={tattooDetails.bodyLocation}
-          onValueChange={handleLocationChange}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+      {/* View toggle */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setViewSide("front");
+            setExpandedParent(null);
+          }}
+          className={`px-4 py-2 rounded-lg text-sm font-mono uppercase tracking-wider transition-all duration-200 ${
+            viewSide === "front"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+              : "bg-card border border-border text-muted-foreground hover:border-primary/40"
+          }`}
         >
-          <motion.div
-            className="contents"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-          >
-            {[...parentLocations]
-              .sort((a, b) => a.additionalPrice - b.additionalPrice)
-              .map((location) => {
-                const locationHasChildren = hasChildren(location.id);
-                const isSelected = tattooDetails.bodyLocation === location.id || selectedIsChildOf(location.id);
-                const isExpanded = expandedParent === location.id;
-                return (
-                  <motion.div
-                    key={location.id}
-                    className="relative col-span-1"
-                    variants={itemVariants}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  >
-                    {locationHasChildren ? (
-                      <button
-                        type="button"
-                        onClick={() => handleLocationChange(location.id)}
-                        className={`relative h-full w-full flex flex-row rounded-lg border-2 bg-card/80 backdrop-blur-sm cursor-pointer transition-all duration-300 text-left
-                          ${isSelected
-                            ? "border-primary glow-magenta bg-primary/[0.03]"
-                            : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
-                          }`}
-                      >
-                        <div className="w-[60px] sm:w-[80px] h-full rounded-l-lg bg-muted/30 flex items-center justify-center p-2">
-                          <BodyPartIcon locationId={location.id} isSelected={isSelected} />
-                        </div>
-                        <div className="flex flex-1 min-w-0 p-3">
-                          <div className="flex flex-col justify-between flex-1">
-                            <div>
-                              <span className="font-mono uppercase tracking-wider font-bold text-sm block text-foreground">
-                                {location.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground line-clamp-1">
-                                {location.description}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-primary mt-1">
-                              <ChevronRight className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-                              <span>Escolher região</span>
-                            </div>
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <motion.div
-                            className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                          />
-                        )}
-                      </button>
-                    ) : (
-                      <>
-                        <RadioGroupItem value={location.id} id={location.id} className="peer sr-only" />
-                        <Label
-                          htmlFor={location.id}
-                          className={`relative h-full flex flex-row rounded-lg border-2 bg-card/80 backdrop-blur-sm cursor-pointer transition-all duration-300
-                            ${isSelected
-                              ? "border-primary glow-magenta bg-primary/[0.03]"
-                              : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
-                            }
-                            peer-data-[state=checked]:border-primary peer-data-[state=checked]:glow-magenta
-                            [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:glow-magenta`}
-                        >
-                          <div className="w-[60px] sm:w-[80px] h-full rounded-l-lg bg-muted/30 flex items-center justify-center p-2">
-                            <BodyPartIcon locationId={location.id} isSelected={isSelected} />
-                          </div>
-                          <div className="flex flex-1 min-w-0 p-3">
-                            <div className="flex flex-col justify-between flex-1">
-                              <div>
-                                <span className="font-mono uppercase tracking-wider font-bold text-sm block text-foreground">
-                                  {location.name}
-                                </span>
-                                <span className="text-xs text-muted-foreground line-clamp-1">
-                                  {location.description}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
-                                {location.additionalTime > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    <span>+{formatTime(location.additionalTime)}</span>
-                                  </div>
-                                )}
-                                {location.additionalPrice > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <DollarSign className="w-3 h-3 text-primary" />
-                                    <span className="font-semibold gradient-text">
-                                      +{formatPrice(location.additionalPrice)}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <motion.div
-                              className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            />
-                          )}
-                        </Label>
-                      </>
-                    )}
+          Frente
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setViewSide("back");
+            setExpandedParent(null);
+          }}
+          className={`px-4 py-2 rounded-lg text-sm font-mono uppercase tracking-wider transition-all duration-200 ${
+            viewSide === "back"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+              : "bg-card border border-border text-muted-foreground hover:border-primary/40"
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <RotateCcw className="w-3.5 h-3.5" />
+            Costas
+          </span>
+        </button>
+      </div>
 
-                    {/* Sub-locations */}
-                    {locationHasChildren && isExpanded && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-2 ml-4 space-y-2"
-                      >
-                        {getChildren(location.id).map((child) => {
-                          const childSelected = tattooDetails.bodyLocation === child.id;
-                          return (
-                            <button
-                              key={child.id}
-                              type="button"
-                              onClick={() => handleSubLocationChange(child.id)}
-                              className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 bg-card/80 text-left transition-all duration-200
-                                ${childSelected
-                                  ? "border-primary bg-primary/[0.03]"
-                                  : "border-border/50 hover:border-primary/40"
-                                }`}
-                            >
-                              <div className="w-8 h-8 rounded bg-muted/30 flex items-center justify-center">
-                                <BodyPartIcon locationId={location.id} isSelected={childSelected} />
-                              </div>
-                              <div className="flex-1">
-                                <span className="font-mono uppercase tracking-wider font-bold text-xs text-foreground">
-                                  {child.name}
-                                </span>
-                                <span className="text-xs text-muted-foreground block">
-                                  {child.description}
-                                </span>
-                              </div>
-                              {childSelected && (
-                                <div className="w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </motion.div>
+      {/* Body Model SVG */}
+      <div className="flex justify-center">
+        <div className="relative w-full max-w-[330px]">
+          <svg
+            viewBox="0 0 330 420"
+            className="w-full h-auto"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Background body silhouette */}
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="shadow">
+                <feDropShadow
+                  dx="0"
+                  dy="2"
+                  stdDeviation="3"
+                  floodColor="rgba(0,0,0,0.3)"
+                />
+              </filter>
+            </defs>
+
+            {/* Body outline silhouette for context */}
+            <path
+              d="M 165,0 Q 145,0 143,20 L 143,44 Q 143,58 153,58 L 153,72 L 110,78 L 92,82 L 78,90 L 64,140 L 54,200 L 48,225 L 50,244 L 80,244 L 82,140 L 100,86 L 108,130 L 96,156 L 92,165 L 120,165 L 128,192 L 165,200 L 202,192 L 210,165 L 238,165 L 234,156 L 222,130 L 230,86 L 248,140 L 250,244 L 280,244 L 282,225 L 276,200 L 266,140 L 252,90 L 238,82 L 220,78 L 177,72 L 177,58 Q 187,58 187,44 L 187,20 Q 185,0 165,0 Z"
+              fill="hsl(var(--card))"
+              stroke="hsl(var(--border))"
+              strokeWidth="0.5"
+              opacity="0.2"
+            />
+            {/* Legs outline */}
+            <path
+              d="M 125,192 L 140,278 L 138,298 L 144,380 L 134,412 L 166,412 L 165,380 L 165,298 L 165,200 Z"
+              fill="hsl(var(--card))"
+              stroke="hsl(var(--border))"
+              strokeWidth="0.5"
+              opacity="0.2"
+            />
+            <path
+              d="M 205,192 L 190,278 L 192,298 L 186,380 L 196,412 L 164,412 L 165,380 L 165,298 L 165,200 Z"
+              fill="hsl(var(--card))"
+              stroke="hsl(var(--border))"
+              strokeWidth="0.5"
+              opacity="0.2"
+            />
+
+            {/* Interactive zones */}
+            {zones.map((zone, idx) => {
+              const selected = isSelected(zone.id);
+              const hovered = hoveredZone === zone.id;
+              const price = getZonePrice(
+                zone.id,
+                pricingConfig.bodyLocations
+              );
+              const baseColor = getPainColor(price);
+
+              return (
+                <g key={`${zone.id}-${idx}`}>
+                  <path
+                    d={zone.path}
+                    fill={
+                      selected
+                        ? "hsl(var(--primary))"
+                        : hovered
+                          ? baseColor
+                          : baseColor
+                    }
+                    fillOpacity={selected ? 0.7 : hovered ? 0.6 : 0.35}
+                    stroke={
+                      selected
+                        ? "hsl(var(--primary))"
+                        : hovered
+                          ? "hsl(var(--foreground))"
+                          : "hsl(var(--border))"
+                    }
+                    strokeWidth={selected ? 2 : hovered ? 1.5 : 0.8}
+                    className="cursor-pointer transition-all duration-200"
+                    filter={selected ? "url(#glow)" : undefined}
+                    onClick={() => handleZoneClick(zone.id)}
+                    onMouseEnter={() => setHoveredZone(zone.id)}
+                    onMouseLeave={() => setHoveredZone(null)}
+                    onTouchStart={() => setHoveredZone(zone.id)}
+                  />
+                  {/* Label only on hover or selection */}
+                  {(hovered || selected) && (
+                    <text
+                      x={zone.labelPos.x}
+                      y={zone.labelPos.y}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="hsl(var(--foreground))"
+                      fontSize="7"
+                      fontWeight="bold"
+                      fontFamily="monospace"
+                      className="pointer-events-none select-none"
+                      style={{ textTransform: "uppercase" }}
+                    >
+                      {zone.label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Side label */}
+            <text
+              x="165"
+              y="418"
+              textAnchor="middle"
+              fill="hsl(var(--muted-foreground))"
+              fontSize="8"
+              fontFamily="monospace"
+              className="select-none"
+              style={{ textTransform: "uppercase", letterSpacing: "2px" }}
+            >
+              {viewSide === "front" ? "Vista Frontal" : "Vista Traseira"}
+            </text>
+          </svg>
+        </div>
+      </div>
+
+      {/* Pain/Price Legend */}
+      <div className="flex items-center justify-center gap-1">
+        <span className="text-[10px] text-muted-foreground font-mono mr-1">
+          Custo:
+        </span>
+        {[0, 50, 100, 150, 200].map((price) => (
+          <div key={price} className="flex flex-col items-center gap-0.5">
+            <div
+              className="w-5 h-3 rounded-sm"
+              style={{ backgroundColor: getPainColor(price), opacity: 0.6 }}
+            />
+            <span className="text-[8px] text-muted-foreground font-mono">
+              {price === 0 ? "0" : `+${price}`}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Hovered zone info */}
+      <AnimatePresence mode="wait">
+        {hoveredLocation && !isSelected(hoveredZone!) && (
+          <motion.div
+            key="hover-info"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            className="text-center text-xs text-muted-foreground"
+          >
+            <span className="font-mono font-bold text-foreground">
+              {hoveredLocation.name}
+            </span>
+            {hoveredLocation.additionalPrice > 0 && (
+              <span className="ml-2 gradient-text font-semibold">
+                +{formatPrice(hoveredLocation.additionalPrice)}
+              </span>
+            )}
+            {hoveredLocation.additionalTime > 0 && (
+              <span className="ml-2">
+                +{formatTime(hoveredLocation.additionalTime)}
+              </span>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Selected zone details */}
+      <AnimatePresence mode="wait">
+        {selectedLocation && (
+          <motion.div
+            key="selected-info"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-primary/5 border border-primary/20 rounded-lg p-4"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-mono font-bold text-sm text-foreground uppercase tracking-wider">
+                  {selectedLocation.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {selectedLocation.description}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                {selectedLocation.additionalTime > 0 && (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>+{formatTime(selectedLocation.additionalTime)}</span>
+                  </div>
+                )}
+                {selectedLocation.additionalPrice > 0 && (
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-primary" />
+                    <span className="font-semibold gradient-text">
+                      +{formatPrice(selectedLocation.additionalPrice)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sub-locations panel */}
+      <AnimatePresence mode="wait">
+        {expandedParent && hasChildren(expandedParent) && (
+          <motion.div
+            key={`sub-${expandedParent}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-card/80 border border-border rounded-lg p-3 space-y-2">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <ChevronRight className="w-3 h-3 text-primary" />
+                Escolha a regiao:
+              </p>
+              {getChildren(expandedParent).map((child) => {
+                const childSelected =
+                  tattooDetails.bodyLocation === child.id;
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => handleSubLocationChange(child.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border-2 bg-card/80 text-left transition-all duration-200 ${
+                      childSelected
+                        ? "border-primary bg-primary/[0.03] glow-magenta"
+                        : "border-border/50 hover:border-primary/40"
+                    }`}
+                  >
+                    <div>
+                      <span className="font-mono uppercase tracking-wider font-bold text-xs text-foreground">
+                        {child.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground block">
+                        {child.description}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs shrink-0">
+                      {child.additionalTime > 0 && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            +{formatTime(child.additionalTime)}
+                          </span>
+                        </div>
+                      )}
+                      {child.additionalPrice > 0 && (
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3 text-primary" />
+                          <span className="font-semibold gradient-text">
+                            +{formatPrice(child.additionalPrice)}
+                          </span>
+                        </div>
+                      )}
+                      {childSelected && (
+                        <div className="w-2 h-2 rounded-full bg-primary shadow-lg shadow-primary/50" />
+                      )}
+                    </div>
+                  </button>
                 );
               })}
+            </div>
           </motion.div>
-        </RadioGroup>
-      </div>
+        )}
+      </AnimatePresence>
 
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={goToPreviousStep}>
@@ -476,8 +773,11 @@ export function BodyLocation() {
         </Button>
         <div className="flex items-center gap-4">
           <PriceEstimate />
-          <Button onClick={goToNextStep} disabled={!tattooDetails.bodyLocation}>
-            Próximo
+          <Button
+            onClick={goToNextStep}
+            disabled={!tattooDetails.bodyLocation}
+          >
+            Proximo
           </Button>
         </div>
       </div>
