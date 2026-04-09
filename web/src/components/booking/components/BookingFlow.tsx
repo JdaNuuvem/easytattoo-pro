@@ -135,7 +135,8 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
   };
 
   const progressPercent = ((displayStep + 1) / totalSteps) * 100;
-  const CurrentIcon = stepIcons[currentStepName as BookingStep] ?? Pen;
+  const CurrentIcon: React.ElementType =
+    (currentStepName && stepIcons[currentStepName as BookingStep]) || Pen;
 
   // Build visible steps for the mini stepper
   const visibleSteps = STEPS.filter((step) => {
