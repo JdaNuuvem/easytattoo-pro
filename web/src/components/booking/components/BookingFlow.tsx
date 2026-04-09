@@ -19,42 +19,11 @@ import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { useBookingStore } from "@/stores/booking";
 import { BookingStep, STEPS } from "@/stores/bookingStateMachine";
 import { formatPrice, formatTime } from "@/components/booking/pricing/calculator";
-import {
-  User,
-  FileText,
-  Shield,
-  Users,
-  Pen,
-  Ruler,
-  Layers,
-  Palette,
-  MapPin,
-  Image,
-  Sparkles,
-  Calendar,
-  CreditCard,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 interface BookingFlowProps {
   artistId: string;
 }
 
-const stepIcons: Record<BookingStep, LucideIcon> = {
-  artist: User,
-  personal: FileText,
-  ageTerms: Shield,
-  companion: Users,
-  type: Pen,
-  size: Ruler,
-  shading: Layers,
-  color: Palette,
-  location: MapPin,
-  references: Image,
-  promotion: Sparkles,
-  scheduling: Calendar,
-  payment: CreditCard,
-};
 
 const stepVariants = {
   enter: (direction: number) => ({
@@ -136,8 +105,6 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
   };
 
   const progressPercent = ((displayStep + 1) / totalSteps) * 100;
-  const CurrentIcon: LucideIcon =
-    (currentStepName ? stepIcons[currentStepName as BookingStep] : Pen) || Pen;
 
   // Build visible steps for the mini stepper
   const visibleSteps = STEPS.filter((step) => {
@@ -188,16 +155,8 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
           />
         </div>
 
-        {/* Step info + live price */}
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-              <CurrentIcon className="w-4 h-4 text-primary" />
-            </div>
-            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-              Passo {displayStep + 1} de {totalSteps}
-            </span>
-          </div>
+        {/* Live price */}
+        <div className="flex items-center justify-end mt-3">
           <div className="flex items-center gap-2">
             {priceCalculation && priceCalculation.totalPrice > 0 && (
               <motion.div
