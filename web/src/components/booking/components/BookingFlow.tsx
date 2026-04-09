@@ -112,7 +112,7 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
       scheduling: "Agendamento",
       payment: "Agendar Minha Sessão",
     };
-    return titles[currentStepName] || "Agendamento";
+    return titles[currentStepName as BookingStep] || "Agendamento";
   };
 
   const renderStep = () => {
@@ -131,11 +131,11 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
       scheduling: <Scheduling />,
       payment: <Payment />,
     };
-    return steps[currentStepName] || null;
+    return steps[currentStepName as BookingStep] || null;
   };
 
   const progressPercent = ((displayStep + 1) / totalSteps) * 100;
-  const CurrentIcon = stepIcons[currentStepName] || Pen;
+  const CurrentIcon = stepIcons[currentStepName as BookingStep] ?? Pen;
 
   // Build visible steps for the mini stepper
   const visibleSteps = STEPS.filter((step) => {
