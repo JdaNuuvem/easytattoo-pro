@@ -16,7 +16,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Image, Plus, Pencil, Trash2, Upload, Video, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { Image, Plus, Pencil, Trash2, Upload, Video, ChevronLeft, ChevronRight, Play, Star, MessageSquareQuote, User } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Card as CardUI, CardHeader, CardTitle } from "@/components/ui/card";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { PortfolioGridSkeleton } from "@/components/dashboard/DashboardSkeleton";
@@ -33,6 +36,41 @@ interface PortfolioItem {
   tags: string[];
   isPublic: boolean;
   order: number;
+}
+
+interface Testimonial {
+  id: string;
+  clientName: string;
+  text: string;
+  rating: number;
+  videoUrl?: string;
+  imageUrl?: string;
+  isPublic: boolean;
+  createdAt: string;
+}
+
+function StarRating({ rating, onChange }: { rating: number; onChange?: (r: number) => void }) {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange?.(star)}
+          disabled={!onChange}
+          className={onChange ? "cursor-pointer" : "cursor-default"}
+        >
+          <Star
+            className={`w-5 h-5 transition-colors ${
+              star <= rating
+                ? "fill-yellow-400 text-yellow-400"
+                : "fill-none text-muted-foreground/30"
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function PortfolioPage() {
@@ -58,8 +96,23 @@ export default function PortfolioPage() {
   const [uploadTags, setUploadTags] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  // Testimonials state
+  const testimonialVideoRef = useRef<HTMLInputElement>(null);
+  const testimonialImageRef = useRef<HTMLInputElement>(null);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [testimonialOpen, setTestimonialOpen] = useState(false);
+  const [editTestimonial, setEditTestimonial] = useState<Testimonial | null>(null);
+  const [editTestimonialOpen, setEditTestimonialOpen] = useState(false);
+  const [tClientName, setTClientName] = useState("");
+  const [tText, setTText] = useState("");
+  const [tRating, setTRating] = useState(5);
+  const [tVideoFile, setTVideoFile] = useState<File | null>(null);
+  const [tImageFile, setTImageFile] = useState<File | null>(null);
+  const [tSaving, setTSaving] = useState(false);
+
   useEffect(() => {
     fetchPortfolio();
+    fetchTestimonials();
   }, []);
 
   async function fetchPortfolio() {
@@ -127,6 +180,83 @@ export default function PortfolioPage() {
     setUploadTags("");
   }
 
+  // Testimonials functions
+  async function fetchTestimonials() {
+    try {
+      const response = await api.get("/portfolio/testimonials/me");
+      setTestimonials(response.data);
+    } catch {
+      // endpoint may not exist yet, use empty
+    }
+  }
+
+  function resetTestimonialForm() {
+    setTClientName("");
+    setTText("");
+    setTRating(5);
+    setTVideoFile(null);
+    setTImageFile(null);
+  }
+
+  async function handleSaveTestimonial() {
+    if (!tClientName || !tText) return;
+    setTSaving(true);
+    try {
+      let videoUrl: string | undefined;
+      let imageUrl: string | undefined;
+
+      if (tVideoFile) {
+        const fd = new FormData();
+        fd.append("file", tVideoFile);
+        const res = await api.post("/upload/image", fd);
+        videoUrl = res.data.url;
+      }
+      if (tImageFile) {
+        const fd = new FormData();
+        fd.append("file", tImageFile);
+        const res = await api.post("/upload/image", fd);
+        imageUrl = res.data.url;
+      }
+
+      await api.post("/portfolio/testimonials", {
+        clientName: tClientName,
+        text: tText,
+        rating: tRating,
+        videoUrl,
+        imageUrl,
+        isPublic: true,
+      });
+
+      toast({ title: "Depoimento adicionado" });
+      setTestimonialOpen(false);
+      resetTestimonialForm();
+      fetchTestimonials();
+    } catch {
+      toast({ variant: "destructive", title: "Erro ao salvar depoimento" });
+    } finally {
+      setTSaving(false);
+    }
+  }
+
+  async function handleDeleteTestimonial(id: string) {
+    try {
+      await api.delete(`/portfolio/testimonials/${id}`);
+      setTestimonials((prev) => prev.filter((t) => t.id !== id));
+      toast({ title: "Depoimento removido" });
+    } catch {
+      toast({ variant: "destructive", title: "Erro ao remover" });
+    }
+  }
+
+  async function handleToggleTestimonialPublic(id: string, isPublic: boolean) {
+    try {
+      await api.put(`/portfolio/testimonials/${id}`, { isPublic });
+      setTestimonials((prev) => prev.map((t) => (t.id === id ? { ...t, isPublic } : t)));
+    } catch {
+      toast({ variant: "destructive", title: "Erro" });
+    }
+  }
+
   async function handleTogglePublic(id: string, isPublic: boolean) {
     try {
       await api.put(`/portfolio/${id}`, { isPublic });
@@ -172,13 +302,32 @@ export default function PortfolioPage() {
     return [item.imageUrl];
   };
 
+  const avgRating = testimonials.length > 0
+    ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
+    : null;
+
   return (
     <div>
       <PageHeader
         title="Portfolio"
-        description="Gerencie suas fotos e videos de trabalhos"
-        action={{ label: "Adicionar", onClick: () => setUploadOpen(true) }}
+        description="Gerencie suas fotos, videos e depoimentos"
       />
+
+      <Tabs defaultValue="trabalhos" className="w-full mb-6">
+        <TabsList className="grid grid-cols-2 w-full max-w-md bg-muted">
+          <TabsTrigger value="trabalhos">Trabalhos</TabsTrigger>
+          <TabsTrigger value="depoimentos">
+            Depoimentos {testimonials.length > 0 && `(${testimonials.length})`}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="trabalhos" className="mt-6">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setUploadOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Trabalho
+            </Button>
+          </div>
 
       {/* Category Filter */}
       <div className="flex flex-wrap gap-2 mb-6">
@@ -294,6 +443,87 @@ export default function PortfolioPage() {
           })}
         </div>
       )}
+
+        </TabsContent>
+
+        <TabsContent value="depoimentos" className="mt-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              {avgRating && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400/10 border border-yellow-400/20 rounded-sm">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-bold text-yellow-600">{avgRating}</span>
+                  <span className="text-xs text-muted-foreground">({testimonials.length} avaliacoes)</span>
+                </div>
+              )}
+            </div>
+            <Button onClick={() => setTestimonialOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Depoimento
+            </Button>
+          </div>
+
+          {testimonials.length === 0 ? (
+            <Card className="border-dashed border-border">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <MessageSquareQuote className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">Nenhum depoimento adicionado</p>
+                <Button onClick={() => setTestimonialOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Primeiro Depoimento
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {testimonials.map((t) => (
+                <Card key={t.id} className="border-border">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        {t.imageUrl ? (
+                          <img src={t.imageUrl} alt={t.clientName} className="w-10 h-10 rounded-full object-cover border border-border" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border border-border">
+                            <User className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium">{t.clientName}</p>
+                          <StarRating rating={t.rating} />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Switch
+                          checked={t.isPublic}
+                          onCheckedChange={(checked) => handleToggleTestimonialPublic(t.id, checked)}
+                          className="scale-75"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteTestimonial(t.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground italic">&ldquo;{t.text}&rdquo;</p>
+
+                    {t.videoUrl && (
+                      <div className="rounded-sm overflow-hidden border border-border">
+                        <video src={t.videoUrl} controls className="w-full max-h-48 object-cover" />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Carousel Preview Modal */}
       {previewItem && (
@@ -474,6 +704,89 @@ export default function PortfolioPage() {
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancelar</Button>
             <Button onClick={handleUpload} disabled={uploadFiles.length === 0 || uploading} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {uploading ? "Enviando..." : "Enviar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Testimonial Dialog */}
+      <Dialog open={testimonialOpen} onOpenChange={setTestimonialOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar Depoimento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div>
+              <Label>Nome do Cliente</Label>
+              <Input
+                value={tClientName}
+                onChange={(e) => setTClientName(e.target.value)}
+                className="bg-background border-border"
+                placeholder="Nome do cliente"
+              />
+            </div>
+            <div>
+              <Label>Avaliacao</Label>
+              <div className="mt-1">
+                <StarRating rating={tRating} onChange={setTRating} />
+              </div>
+            </div>
+            <div>
+              <Label>Depoimento</Label>
+              <Textarea
+                value={tText}
+                onChange={(e) => setTText(e.target.value)}
+                className="bg-background border-border min-h-[100px]"
+                placeholder="O que o cliente disse sobre o trabalho..."
+              />
+            </div>
+            <div>
+              <Label>Foto do Cliente (opcional)</Label>
+              <div className="mt-1 border-2 border-dashed border-border rounded-sm p-3">
+                <input
+                  ref={testimonialImageRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setTImageFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <button type="button" onClick={() => testimonialImageRef.current?.click()} className="cursor-pointer flex items-center gap-2 w-full">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {tImageFile ? tImageFile.name : "Adicionar foto do cliente"}
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label>Video do Depoimento (opcional)</Label>
+              <div className="mt-1 border-2 border-dashed border-border rounded-sm p-3">
+                <input
+                  ref={testimonialVideoRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setTVideoFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <button type="button" onClick={() => testimonialVideoRef.current?.click()} className="cursor-pointer flex items-center gap-2 w-full">
+                  <Video className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {tVideoFile ? tVideoFile.name : "Adicionar video do depoimento"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTestimonialOpen(false); resetTestimonialForm(); }}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveTestimonial}
+              disabled={!tClientName || !tText || tSaving}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {tSaving ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>

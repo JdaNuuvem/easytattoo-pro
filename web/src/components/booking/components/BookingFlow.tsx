@@ -18,6 +18,7 @@ import { Payment } from "./Payment";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { useBookingStore } from "@/stores/booking";
 import { BookingStep, STEPS } from "@/stores/bookingStateMachine";
+import { formatPrice, formatTime } from "@/components/booking/pricing/calculator";
 import {
   User,
   FileText,
@@ -74,7 +75,7 @@ const stepVariants = {
 
 export function BookingFlow({ artistId }: BookingFlowProps) {
   const { currentStep } = useBookingNavigation();
-  const { tattooDetails } = useBookingStore();
+  const { tattooDetails, priceCalculation, pricingConfig } = useBookingStore();
   const currentStepName = STEPS[currentStep];
   const isClosure = tattooDetails.type === "closure";
   const skippedSteps = isClosure ? 2 : 0;
@@ -144,8 +145,8 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
 
   return (
     <div className="container max-w-2xl mx-auto px-4">
-      {/* Step Progress */}
-      <div className="mb-8">
+      {/* Step Progress (sticky so the live price stays visible while scrolling) */}
+      <div className="mb-8 sticky top-0 z-30 -mx-4 px-4 pt-4 pb-3 bg-background/85 backdrop-blur-md border-b border-border/40">
         {/* Mini step dots */}
         <div className="flex items-center justify-center gap-1.5 mb-4">
           {visibleSteps.map((step, i) => {
@@ -185,17 +186,50 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
           />
         </div>
 
-        {/* Step info */}
+        {/* Step info + live price */}
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
               <CurrentIcon className="w-4 h-4 text-primary" />
             </div>
+            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+              Passo {displayStep + 1} de {totalSteps}
+            </span>
           </div>
-          <span className="text-xs font-mono gradient-text font-semibold">
-            {Math.round(progressPercent)}%
-          </span>
+          <div className="flex items-center gap-2">
+            {priceCalculation && priceCalculation.totalPrice > 0 && (
+              <motion.div
+                key={priceCalculation.totalPrice}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/30"
+              >
+                <span className="font-mono font-bold text-sm gradient-text leading-none">
+                  {formatPrice(priceCalculation.totalPrice)}
+                </span>
+                <span className="text-[10px] font-mono text-muted-foreground leading-none">
+                  {formatTime(priceCalculation.totalTime)}
+                </span>
+              </motion.div>
+            )}
+            <span className="text-xs font-mono gradient-text font-semibold">
+              {Math.round(progressPercent)}%
+            </span>
+          </div>
         </div>
+
+        {/* Deposit hint once a price exists */}
+        {priceCalculation && priceCalculation.totalPrice > 0 && pricingConfig?.fixedDeposit ? (
+          <div className="mt-2 flex items-center justify-end">
+            <span className="text-[10px] font-mono text-muted-foreground">
+              sinal para reservar:&nbsp;
+              <span className="text-primary font-semibold">
+                {formatPrice(pricingConfig.fixedDeposit)}
+              </span>
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {/* Step Title */}

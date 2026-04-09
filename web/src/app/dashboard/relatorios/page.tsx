@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 import {
   Select,
   SelectContent,
@@ -180,33 +181,15 @@ export default function RelatoriosPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {summaryCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Card
-              key={card.title}
-              className="border-border hover:border-primary/30 hover:glow-magenta transition-all"
-            >
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground normal-case tracking-normal">
-                  {card.title}
-                </CardTitle>
-                <Icon className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {loading ? (
-                    <span className="animate-pulse text-muted-foreground">
-                      --
-                    </span>
-                  ) : (
-                    card.value
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {summaryCards.map((card) => (
+          <MetricCard
+            key={card.title}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            loading={loading}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -255,65 +238,6 @@ export default function RelatoriosPage() {
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Booking Stats */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-sm">Agendamentos por Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  label: "Pendentes",
-                  value: analytics.bookingStats.pending,
-                  color: "bg-amber-400",
-                },
-                {
-                  label: "Confirmados",
-                  value: analytics.bookingStats.confirmed,
-                  color: "bg-emerald-400",
-                },
-                {
-                  label: "Concluidos",
-                  value: analytics.bookingStats.completed,
-                  color: "bg-primary",
-                },
-                {
-                  label: "Cancelados",
-                  value: analytics.bookingStats.cancelled,
-                  color: "bg-destructive",
-                },
-              ].map((stat) => {
-                const total =
-                  analytics.bookingStats.pending +
-                  analytics.bookingStats.confirmed +
-                  analytics.bookingStats.completed +
-                  analytics.bookingStats.cancelled;
-                const percentage = total > 0 ? (stat.value / total) * 100 : 0;
-
-                return (
-                  <div key={stat.label} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {stat.label}
-                      </span>
-                      <span className="font-medium">
-                        {stat.value} ({percentage.toFixed(0)}%)
-                      </span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${stat.color} rounded-full transition-all`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </CardContent>
         </Card>
 

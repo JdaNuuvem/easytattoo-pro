@@ -25,6 +25,10 @@ import { Calendar, Eye, CheckCircle, XCircle } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { TableSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import {
+  BOOKING_STATUS_LABELS as statusLabels,
+  BOOKING_STATUS_COLORS as statusColors,
+} from "@/lib/constants";
 
 interface Booking {
   id: string;
@@ -37,22 +41,6 @@ interface Booking {
   bodyLocation: string;
   tattooType: string;
 }
-
-const statusLabels: Record<string, string> = {
-  PENDING: "Pendente",
-  CONFIRMED: "Confirmado",
-  IN_PROGRESS: "Em Andamento",
-  COMPLETED: "Concluido",
-  CANCELLED: "Cancelado",
-};
-
-const statusColors: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-700 border-amber-300",
-  CONFIRMED: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  IN_PROGRESS: "bg-sky-100 text-sky-700 border-sky-300",
-  COMPLETED: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  CANCELLED: "bg-red-100 text-red-700 border-red-300",
-};
 
 export default function AgendaPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);

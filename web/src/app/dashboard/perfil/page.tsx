@@ -13,10 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/typography";
-import { Upload, Save, MessageCircle, Check, X, Mail, CreditCard, Calendar } from "lucide-react";
-import { GoogleIcon } from "@/components/ui/google-icon";
-import { redirectToGoogleAuth, isGoogleAuthConfigured } from "@/lib/google-auth";
+import { Upload, Save, MessageCircle, Check, X, Mail, CreditCard } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileSkeleton } from "@/components/dashboard/DashboardSkeleton";
@@ -27,9 +26,6 @@ interface Profile {
   instagram: string;
   bio: string;
   profilePhoto: string;
-  pixKey: string;
-  pixName: string;
-  pixBank: string;
   acceptsCompanion: boolean;
   maxCompanions: number;
   evolutionApiUrl: string;
@@ -41,8 +37,6 @@ interface Profile {
   smtpPass: string;
   smtpFrom: string;
   paymentMethods: string[];
-  googleCalendarConnected: boolean;
-  googleCalendarId: string;
 }
 
 const defaultProfile: Profile = {
@@ -51,9 +45,6 @@ const defaultProfile: Profile = {
   instagram: "",
   bio: "",
   profilePhoto: "",
-  pixKey: "",
-  pixName: "",
-  pixBank: "",
   acceptsCompanion: false,
   maxCompanions: 1,
   evolutionApiUrl: "",
@@ -65,8 +56,6 @@ const defaultProfile: Profile = {
   smtpPass: "",
   smtpFrom: "",
   paymentMethods: ["PIX"],
-  googleCalendarConnected: false,
-  googleCalendarId: "",
 };
 
 export default function PerfilPage() {
@@ -76,17 +65,10 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [testingWhatsapp, setTestingWhatsapp] = useState(false);
   const [testingSmtp, setTestingSmtp] = useState(false);
-  const [connectingGoogle, setConnectingGoogle] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchProfile();
-
-    // Check if returning from Google Calendar OAuth
-    const googleToken = localStorage.getItem("google_access_token");
-    if (googleToken) {
-      setProfile((prev) => ({ ...prev, googleCalendarConnected: true }));
-    }
   }, []);
 
   async function fetchProfile() {
@@ -99,9 +81,6 @@ export default function PerfilPage() {
         instagram: data.instagram ?? "",
         bio: data.bio ?? "",
         profilePhoto: data.profilePhoto ?? "",
-        pixKey: data.pixKey ?? "",
-        pixName: data.pixName ?? "",
-        pixBank: data.pixBank ?? "",
         acceptsCompanion: data.acceptsCompanion ?? false,
         maxCompanions: data.maxCompanions ?? 1,
         evolutionApiUrl: data.evolutionApiUrl ?? "",
@@ -113,8 +92,6 @@ export default function PerfilPage() {
         smtpPass: data.smtpPass ?? "",
         smtpFrom: data.smtpFrom ?? "",
         paymentMethods: data.paymentMethods ?? ["PIX"],
-        googleCalendarConnected: data.googleCalendarConnected ?? false,
-        googleCalendarId: data.googleCalendarId ?? "",
       });
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
@@ -131,9 +108,6 @@ export default function PerfilPage() {
         phone: profile.phone,
         instagram: profile.instagram,
         bio: profile.bio,
-        pixKey: profile.pixKey,
-        pixName: profile.pixName,
-        pixBank: profile.pixBank,
         acceptsCompanion: profile.acceptsCompanion,
         maxCompanions: profile.maxCompanions,
         evolutionApiUrl: profile.evolutionApiUrl,
@@ -145,7 +119,6 @@ export default function PerfilPage() {
         smtpPass: profile.smtpPass,
         smtpFrom: profile.smtpFrom,
         paymentMethods: profile.paymentMethods,
-        googleCalendarId: profile.googleCalendarId,
       });
       toast({
         title: "Perfil atualizado",
@@ -209,29 +182,6 @@ export default function PerfilPage() {
     }
   }
 
-  function connectGoogleCalendar() {
-    setConnectingGoogle(true);
-    redirectToGoogleAuth("artist-calendar", [
-      "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/calendar.readonly",
-    ]);
-  }
-
-  async function disconnectGoogleCalendar() {
-    try {
-      await api.post("/users/profile/google-calendar/disconnect");
-      setProfile((prev) => ({
-        ...prev,
-        googleCalendarConnected: false,
-        googleCalendarId: "",
-      }));
-      localStorage.removeItem("google_access_token");
-      toast({ title: "Google Agenda desconectado" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Erro ao desconectar" });
-    }
-  }
-
   function togglePaymentMethod(method: string) {
     setProfile((prev) => ({
       ...prev,
@@ -267,7 +217,14 @@ export default function PerfilPage() {
         </Button>
       </PageHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Tabs defaultValue="geral" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
+          <TabsTrigger value="integracoes">Integrações</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="geral" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Personal Info */}
         <Card className="border-border">
           <CardHeader>
@@ -322,27 +279,6 @@ export default function PerfilPage() {
         </Card>
 
         <div className="space-y-6">
-          {/* PIX */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-sm">Dados PIX</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Chave PIX</Label>
-                <Input value={profile.pixKey} onChange={(e) => updateField("pixKey", e.target.value)} className="bg-background border-border" placeholder="CPF, Email, Telefone ou Chave Aleatoria" />
-              </div>
-              <div>
-                <Label>Nome do Titular</Label>
-                <Input value={profile.pixName} onChange={(e) => updateField("pixName", e.target.value)} className="bg-background border-border" />
-              </div>
-              <div>
-                <Label>Banco</Label>
-                <Input value={profile.pixBank} onChange={(e) => updateField("pixBank", e.target.value)} className="bg-background border-border" />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Business Settings */}
           <Card className="border-border">
             <CardHeader>
@@ -376,72 +312,9 @@ export default function PerfilPage() {
             </CardContent>
           </Card>
         </div>
+        </TabsContent>
 
-        {/* Google Calendar */}
-        {isGoogleAuthConfigured() && <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
-              Google Agenda
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Text className="text-xs text-muted-foreground">
-              Conecte sua conta Google para sincronizar seus agendamentos automaticamente
-              com o Google Agenda. Novos agendamentos serão adicionados e horários ocupados
-              serão bloqueados automaticamente.
-            </Text>
-
-            {profile.googleCalendarConnected ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 rounded-sm bg-emerald-500/5 border border-emerald-500/20">
-                  <GoogleIcon />
-                  <div className="flex-1">
-                    <Text className="text-sm font-medium text-emerald-600">Conectado</Text>
-                    {profile.googleCalendarId && (
-                      <Text className="text-xs text-muted-foreground">{profile.googleCalendarId}</Text>
-                    )}
-                  </div>
-                  <Check className="w-4 h-4 text-emerald-600" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Sincronizar novos agendamentos</Label>
-                    <p className="text-xs text-muted-foreground">Adiciona automaticamente ao Google Agenda</p>
-                  </div>
-                  <Switch checked={true} disabled />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Bloquear horários ocupados</Label>
-                    <p className="text-xs text-muted-foreground">Impede agendamentos em horários com eventos</p>
-                  </div>
-                  <Switch checked={true} disabled />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:text-destructive border-destructive/30"
-                  onClick={disconnectGoogleCalendar}
-                >
-                  <X className="w-3 h-3 mr-2" />
-                  Desconectar
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full flex items-center gap-3"
-                onClick={connectGoogleCalendar}
-                disabled={connectingGoogle}
-              >
-                <GoogleIcon />
-                {connectingGoogle ? "Conectando..." : "Conectar Google Agenda"}
-              </Button>
-            )}
-          </CardContent>
-        </Card>}
-
+        <TabsContent value="integracoes" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Evolution API - WhatsApp */}
         <Card className="border-border">
           <CardHeader>
@@ -511,7 +384,9 @@ export default function PerfilPage() {
             </Button>
           </CardContent>
         </Card>
+        </TabsContent>
 
+        <TabsContent value="pagamentos" className="grid grid-cols-1 gap-6">
         {/* Payment Methods */}
         <Card className="border-border">
           <CardHeader>
@@ -546,8 +421,8 @@ export default function PerfilPage() {
             </div>
           </CardContent>
         </Card>
-
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

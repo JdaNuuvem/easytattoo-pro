@@ -2,8 +2,11 @@ export type TattooType = "drawing" | "text" | "closure";
 export type ShadingType = "none" | "light" | "medium" | "realism";
 export type ColorType = "black" | "oneColor" | "twoColors" | "threeColors";
 
+export type PriceTableEntryType = "drawing" | "text";
+
 export interface PriceTableEntry {
   id: string;
+  type: PriceTableEntryType;
   width: number;
   height: number;
   additionalPrice: number;

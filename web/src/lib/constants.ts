@@ -29,7 +29,7 @@ export const BODY_LOCATIONS = [
 
 // Standard shading options - single source of truth
 export const SHADING_OPTIONS = [
-  { id: "none", name: "Sem Sombreamento" },
+  { id: "none", name: "Somente Linhas" },
   { id: "light", name: "Sombreamento Leve" },
   { id: "medium", name: "Sombreamento Medio" },
   { id: "realism", name: "Realismo" },
@@ -68,3 +68,21 @@ export const STYLE_CATEGORIES = [
   "Cobertura",
   "Outro",
 ] as const;
+
+// Booking status labels - single source of truth
+export const BOOKING_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendente",
+  CONFIRMED: "Confirmado",
+  IN_PROGRESS: "Em Andamento",
+  COMPLETED: "Concluido",
+  CANCELLED: "Cancelado",
+};
+
+// Booking status badge colors - single source of truth
+export const BOOKING_STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-amber-100 text-amber-700 border-amber-300",
+  CONFIRMED: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  IN_PROGRESS: "bg-sky-100 text-sky-700 border-sky-300",
+  COMPLETED: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  CANCELLED: "bg-red-100 text-red-700 border-red-300",
+};

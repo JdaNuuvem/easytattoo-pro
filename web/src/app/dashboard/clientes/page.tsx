@@ -22,6 +22,10 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Search, Instagram } from "lucide-react";
 import api from "@/lib/api";
 import { TableSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import {
+  BOOKING_STATUS_LABELS as statusLabels,
+  BOOKING_STATUS_COLORS as statusColors,
+} from "@/lib/constants";
 
 interface Client {
   id: string;
@@ -57,22 +61,6 @@ interface ClientDetails {
     bodyLocation: string;
   }>;
 }
-
-const statusLabels: Record<string, string> = {
-  PENDING: "Pendente",
-  CONFIRMED: "Confirmado",
-  IN_PROGRESS: "Em Andamento",
-  COMPLETED: "Concluido",
-  CANCELLED: "Cancelado",
-};
-
-const statusColors: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-600 border-amber-300",
-  CONFIRMED: "bg-emerald-100 text-emerald-600 border-emerald-300",
-  IN_PROGRESS: "bg-sky-100 text-sky-600 border-sky-300",
-  COMPLETED: "bg-emerald-100 text-emerald-600 border-emerald-300",
-  CANCELLED: "bg-destructive/20 text-destructive border-destructive/30",
-};
 
 export default function ClientesPage() {
   const [clients, setClients] = useState<Client[]>([]);

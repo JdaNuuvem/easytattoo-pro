@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Clock, Plus, Trash2, CalendarOff, Calendar, Loader2, Unlink } from "lucide-react";
+import { Clock, Plus, Trash2, CalendarOff, Calendar, Loader2, Unlink, Save } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { ScheduleSkeleton } from "@/components/dashboard/DashboardSkeleton";
@@ -64,10 +64,22 @@ interface GoogleCalendarStatus {
   email?: string;
 }
 
+const DEFAULT_SCHEDULES: Omit<WorkHour, "id">[] = [
+  { dayOfWeek: 0, startTime: "09:00", endTime: "18:00", isAvailable: false },
+  { dayOfWeek: 1, startTime: "09:00", endTime: "18:00", isAvailable: true },
+  { dayOfWeek: 2, startTime: "09:00", endTime: "18:00", isAvailable: true },
+  { dayOfWeek: 3, startTime: "09:00", endTime: "18:00", isAvailable: true },
+  { dayOfWeek: 4, startTime: "09:00", endTime: "18:00", isAvailable: true },
+  { dayOfWeek: 5, startTime: "09:00", endTime: "18:00", isAvailable: true },
+  { dayOfWeek: 6, startTime: "10:00", endTime: "14:00", isAvailable: false },
+];
+
 export default function HorariosPage() {
   const [workHours, setWorkHours] = useState<WorkHour[]>([]);
   const [specialDates, setSpecialDates] = useState<SpecialDate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isNewSchedule, setIsNewSchedule] = useState(false);
   const [specialDateOpen, setSpecialDateOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [newNote, setNewNote] = useState("");
@@ -127,40 +139,86 @@ export default function HorariosPage() {
     try {
       const response = await api.get("/schedule/me");
       const data = response.data;
-      setWorkHours(data.workSchedules || []);
+      const schedules = data.workSchedules || [];
       setSpecialDates(data.specialDates || []);
+
+      if (schedules.length === 0) {
+        // Generate local defaults for editing - not saved yet
+        const localDefaults: WorkHour[] = DEFAULT_SCHEDULES.map((s, i) => ({
+          ...s,
+          id: `local-${i}`,
+        }));
+        setWorkHours(localDefaults);
+        setIsNewSchedule(true);
+      } else {
+        setWorkHours(schedules);
+        setIsNewSchedule(false);
+      }
     } catch (error) {
       console.error("Erro ao carregar horarios:", error);
+      // Still show defaults so user can configure
+      const localDefaults: WorkHour[] = DEFAULT_SCHEDULES.map((s, i) => ({
+        ...s,
+        id: `local-${i}`,
+      }));
+      setWorkHours(localDefaults);
+      setIsNewSchedule(true);
     } finally {
       setLoading(false);
     }
   }
 
-  async function updateWorkHour(
-    id: string,
-    field: string,
-    value: string | boolean
-  ) {
+  async function handleSaveSchedule() {
+    setSaving(true);
     try {
-      const wh = workHours.find((w) => w.id === id);
-      if (!wh) return;
-      const updated = { ...wh, [field]: value };
-      await api.put(`/schedule/work-hours/${id}`, {
-        dayOfWeek: updated.dayOfWeek,
-        startTime: updated.startTime,
-        endTime: updated.endTime,
-        isAvailable: updated.isAvailable,
+      if (isNewSchedule) {
+        // Create all work hours
+        const created: WorkHour[] = [];
+        for (const wh of workHours) {
+          const response = await api.post("/schedule/work-hours", {
+            dayOfWeek: wh.dayOfWeek,
+            startTime: wh.startTime,
+            endTime: wh.endTime,
+            isAvailable: wh.isAvailable,
+          });
+          created.push(response.data);
+        }
+        setWorkHours(created);
+        setIsNewSchedule(false);
+      } else {
+        // Update all existing work hours
+        for (const wh of workHours) {
+          await api.put(`/schedule/work-hours/${wh.id}`, {
+            dayOfWeek: wh.dayOfWeek,
+            startTime: wh.startTime,
+            endTime: wh.endTime,
+            isAvailable: wh.isAvailable,
+          });
+        }
+      }
+      toast({
+        title: "Horarios salvos",
+        description: "Seus horarios de trabalho foram atualizados",
       });
-      setWorkHours((prev) =>
-        prev.map((w) => (w.id === id ? { ...w, [field]: value } : w))
-      );
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao atualizar horario",
+        description: "Erro ao salvar horarios",
       });
+    } finally {
+      setSaving(false);
     }
+  }
+
+  function updateWorkHour(
+    id: string,
+    field: string,
+    value: string | boolean
+  ) {
+    setWorkHours((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, [field]: value } : w))
+    );
   }
 
   async function addSpecialDate() {
@@ -219,7 +277,16 @@ export default function HorariosPage() {
       <PageHeader
         title="Horarios"
         description="Configure seus horarios de trabalho"
-      />
+      >
+        <Button
+          onClick={handleSaveSchedule}
+          disabled={saving}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-mono uppercase tracking-wider"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? "Salvando..." : "Salvar"}
+        </Button>
+      </PageHeader>
 
       {/* Google Calendar Integration */}
       <Card className="border-border mb-6">
@@ -282,6 +349,13 @@ export default function HorariosPage() {
         </CardContent>
       </Card>
 
+      {/* New Schedule Notice */}
+      {isNewSchedule && (
+        <div className="mb-4 p-3 rounded-sm bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-700 dark:text-yellow-400">
+          Configure seus horarios abaixo e clique em <strong>Salvar</strong> para confirmar.
+        </div>
+      )}
+
       {/* Work Hours Grid */}
       <Card className="border-border mb-6">
         <CardHeader>
@@ -341,7 +415,7 @@ export default function HorariosPage() {
                     <div className="flex flex-col items-center gap-2">
                       <Clock className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        Nenhum horario configurado. Os horarios serao criados automaticamente ao salvar.
+                        Erro ao carregar horarios.
                       </p>
                     </div>
                   </TableCell>

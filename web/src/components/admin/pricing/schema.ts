@@ -2,13 +2,14 @@ import * as z from "zod";
 
 export const priceTableEntrySchema = z.object({
   id: z.string(),
+  type: z.enum(["drawing", "text"]).default("drawing"),
   width: z
     .number()
     .min(1, "Largura minima e 1cm")
     .max(30, "Largura maxima e 30cm"),
   height: z
     .number()
-    .min(1, "Altura minima e 1cm")
+    .min(0, "Altura minima e 0cm")
     .max(30, "Altura maxima e 30cm"),
   additionalPrice: z.number().min(0, "Preco nao pode ser negativo"),
   additionalTime: z.number().min(0, "Tempo nao pode ser negativo"),

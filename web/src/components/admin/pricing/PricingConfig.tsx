@@ -68,15 +68,16 @@ function recordToTypeArray(
 
 // Transform API price table {width, height, price}[] to form format
 function apiPriceTableToForm(
-  table: Array<Record<string, number>> | undefined
-): Array<{ id: string; width: number; height: number; additionalPrice: number; additionalTime: number }> {
+  table: Array<Record<string, any>> | undefined
+): Array<{ id: string; type: "drawing" | "text"; width: number; height: number; additionalPrice: number; additionalTime: number }> {
   if (!table || !Array.isArray(table)) return [];
   return table.map((entry, i) => ({
     id: `pt-${i}`,
+    type: (entry.type === "text" ? "text" : "drawing") as "drawing" | "text",
     width: entry.width ?? 0,
     height: entry.height ?? 0,
     additionalPrice: entry.price ?? entry.additionalPrice ?? 0,
-    additionalTime: entry.additionalTime ?? 0,
+    additionalTime: entry.time ?? entry.additionalTime ?? 0,
   }));
 }
 
@@ -102,12 +103,14 @@ function typeArrayToRecord(
 }
 
 function formPriceTableToApi(
-  arr: Array<{ width: number; height: number; additionalPrice: number }>
-): Array<{ width: number; height: number; price: number }> {
+  arr: Array<{ type?: string; width: number; height: number; additionalPrice: number; additionalTime: number }>
+): Array<{ type: string; width: number; height: number; price: number; time: number }> {
   return arr.map((entry) => ({
+    type: entry.type ?? "drawing",
     width: entry.width,
     height: entry.height,
     price: entry.additionalPrice,
+    time: entry.additionalTime,
   }));
 }
 
