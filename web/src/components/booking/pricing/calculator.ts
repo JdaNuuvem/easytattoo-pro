@@ -68,18 +68,40 @@ export function calculatePrice(
   let sizePrice = 0;
   let sizeTime = 0;
 
-  if (config.size?.width && config.size?.height) {
-    if (config.size.width <= 5 && config.size.height <= 5) {
-      const smallSizeEntry = pricingConfig.priceTable.find(
+  const isTextType = config.type === "text";
+  const tableForType = pricingConfig.priceTable.filter(
+    (entry) => (entry.type ?? "drawing") === (isTextType ? "text" : "drawing")
+  );
+  const fallbackTable = tableForType.length > 0 ? tableForType : pricingConfig.priceTable;
+
+  if (config.size?.width && (isTextType || config.size?.height)) {
+    if (!isTextType && config.size.width <= 5 && config.size.height <= 5) {
+      const smallSizeEntry = fallbackTable.find(
         (entry) => entry.width === 5 && entry.height === 5
       );
       sizePrice = smallSizeEntry?.additionalPrice || 0;
       sizeTime = smallSizeEntry?.additionalTime || 0;
+    } else if (isTextType) {
+      const exactMatch = fallbackTable.find(
+        (entry) => entry.width === config.size!.width
+      );
+      if (exactMatch) {
+        sizePrice = exactMatch.additionalPrice;
+        sizeTime = exactMatch.additionalTime;
+      } else {
+        const interpolated = interpolatePrice(
+          config.size.width,
+          config.size.width,
+          fallbackTable
+        );
+        sizePrice = interpolated.price;
+        sizeTime = interpolated.time;
+      }
     } else {
       const interpolated = interpolatePrice(
         config.size.width,
         config.size.height,
-        pricingConfig.priceTable
+        fallbackTable
       );
       sizePrice = interpolated.price;
       sizeTime = interpolated.time;
@@ -137,16 +159,9 @@ export function formatPrice(price: number): string {
 }
 
 export function formatTime(minutes: number): string {
-  if (minutes < 60) {
-    return `${minutes}min`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  if (remainingMinutes === 0) {
+  const hours = minutes / 60;
+  if (Number.isInteger(hours)) {
     return `${hours}h`;
   }
-
-  return `${hours}h${remainingMinutes}min`;
+  return `${hours.toFixed(1)}h`;
 }

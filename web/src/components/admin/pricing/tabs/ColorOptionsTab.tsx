@@ -102,7 +102,7 @@ export function ColorOptionsTab({ form }: ColorOptionsTabProps) {
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Label className="text-xs text-muted-foreground whitespace-nowrap">min</Label>
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">h</Label>
                       <Input
                         type="number"
                         value={data?.additionalTime ?? 0}

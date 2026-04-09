@@ -171,9 +171,9 @@ export function Scheduling() {
           <Text className="text-muted-foreground">
             {priceCalculation?.totalTime
               ? `O tempo estimado da sessão é de aproximadamente ${
-                  priceCalculation.totalTime >= 60
-                    ? `${Math.floor(priceCalculation.totalTime / 60)}h${priceCalculation.totalTime % 60 > 0 ? `${priceCalculation.totalTime % 60}min` : ""}`
-                    : `${priceCalculation.totalTime} minutos`
+                  (priceCalculation.totalTime / 60) % 1 === 0
+                    ? `${priceCalculation.totalTime / 60}h`
+                    : `${(priceCalculation.totalTime / 60).toFixed(1)}h`
                 }. Caso ultrapasse, o tatuador combinará o ajuste com você.`
               : "Selecione a data e horário para sua sessão. O tatuador combinará os detalhes com você."}
           </Text>

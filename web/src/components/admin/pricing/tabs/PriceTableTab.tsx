@@ -10,7 +10,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -26,27 +25,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pen, Type } from "lucide-react";
+import { PriceTableEntryType } from "@/components/booking/pricing/types";
 
 interface PriceTableTabProps {
   form: UseFormReturn<FormValues>;
 }
 
-function formatPrice(value: number): string {
-  return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-}
-
-function formatTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0) {
-    return `${hours}h ${mins}min`;
-  }
-  return `${mins}min`;
-}
-
 export function PriceTableTab({ form }: PriceTableTabProps) {
   const [idCounter, setIdCounter] = useState(0);
+  const [activeType, setActiveType] = useState<PriceTableEntryType>("drawing");
+
+  const isText = activeType === "text";
+
+  const allEntries = form.watch("priceTable");
+  const filteredIndices = allEntries
+    .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => (entry.type ?? "drawing") === activeType);
 
   const addNewSize = () => {
     const currentPriceTable = form.getValues("priceTable");
@@ -56,8 +51,9 @@ export function PriceTableTab({ form }: PriceTableTabProps) {
       ...currentPriceTable,
       {
         id: newId,
+        type: activeType,
         width: 5,
-        height: 5,
+        height: isText ? 0 : 5,
         additionalPrice: 0,
         additionalTime: 0,
       },
@@ -74,10 +70,35 @@ export function PriceTableTab({ form }: PriceTableTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Custom Price Table */}
+      {/* Type Toggle */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant={activeType === "drawing" ? "default" : "outline"}
+          onClick={() => setActiveType("drawing")}
+          className="flex items-center gap-2"
+        >
+          <Pen className="w-4 h-4" />
+          Desenho
+        </Button>
+        <Button
+          type="button"
+          variant={activeType === "text" ? "default" : "outline"}
+          onClick={() => setActiveType("text")}
+          className="flex items-center gap-2"
+        >
+          <Type className="w-4 h-4" />
+          Escrita
+        </Button>
+      </div>
+
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-sm">Precos Personalizados por Tamanho</CardTitle>
+          <CardTitle className="text-sm">
+            {isText
+              ? "Precos por Largura (Escrita/Texto)"
+              : "Precos por Tamanho (Desenho)"}
+          </CardTitle>
           <Button
             type="button"
             onClick={addNewSize}
@@ -93,37 +114,39 @@ export function PriceTableTab({ form }: PriceTableTabProps) {
           <Table>
             <TableHeader>
               <TableRow className="border-border">
-                <TableHead>Altura (cm)</TableHead>
+                {!isText && <TableHead>Altura (cm)</TableHead>}
                 <TableHead>Largura (cm)</TableHead>
                 <TableHead>Preco (R$)</TableHead>
-                <TableHead>Tempo (min)</TableHead>
+                <TableHead>Tempo (h)</TableHead>
                 <TableHead className="w-[80px]">Acoes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {form.watch("priceTable").map((entry, index) => (
+              {filteredIndices.map(({ entry, index }) => (
                 <TableRow key={entry.id || index} className="border-border">
-                  <TableCell>
-                    <FormField
-                      control={form.control}
-                      name={`priceTable.${index}.height`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                              className="bg-background border-border w-20"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TableCell>
+                  {!isText && (
+                    <TableCell>
+                      <FormField
+                        control={form.control}
+                        name={`priceTable.${index}.height`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                                className="bg-background border-border w-20"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell>
                     <FormField
                       control={form.control}
@@ -200,11 +223,11 @@ export function PriceTableTab({ form }: PriceTableTabProps) {
                   </TableCell>
                 </TableRow>
               ))}
-              {form.watch("priceTable").length === 0 && (
+              {filteredIndices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={isText ? 4 : 5} className="text-center py-8">
                     <p className="text-sm text-muted-foreground">
-                      Nenhum tamanho personalizado. Clique em &quot;Adicionar Tamanho&quot; para comecar.
+                      Nenhum tamanho configurado para {isText ? "escrita" : "desenho"}. Clique em &quot;Adicionar Tamanho&quot; para comecar.
                     </p>
                   </TableCell>
                 </TableRow>

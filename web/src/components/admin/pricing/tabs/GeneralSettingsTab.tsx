@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,12 +17,61 @@ import {
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "../schema";
+import { Clock } from "lucide-react";
+import api from "@/lib/api";
 
 interface GeneralSettingsTabProps {
   form: UseFormReturn<FormValues>;
 }
 
+interface WorkSchedule {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+function calculateMaxDailyMinutes(schedules: WorkSchedule[]): number {
+  const available = schedules.filter((s) => s.isAvailable);
+  if (available.length === 0) return 0;
+
+  let maxMinutes = 0;
+  for (const schedule of available) {
+    const [startH, startM] = schedule.startTime.split(":").map(Number);
+    const [endH, endM] = schedule.endTime.split(":").map(Number);
+    const minutes = (endH * 60 + (endM || 0)) - (startH * 60 + (startM || 0));
+    if (minutes > maxMinutes) {
+      maxMinutes = minutes;
+    }
+  }
+  return maxMinutes;
+}
+
+function formatMinutesToHours(minutes: number): string {
+  const hours = minutes / 60;
+  if (Number.isInteger(hours)) return `${hours}h`;
+  return `${hours.toFixed(1)}h`;
+}
+
 export function GeneralSettingsTab({ form }: GeneralSettingsTabProps) {
+  const [maxDailyFromSchedule, setMaxDailyFromSchedule] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchSchedule() {
+      try {
+        const response = await api.get("/schedule/me");
+        const schedules: WorkSchedule[] = response.data.workSchedules || [];
+        const maxMinutes = calculateMaxDailyMinutes(schedules);
+        if (maxMinutes > 0) {
+          setMaxDailyFromSchedule(maxMinutes);
+          form.setValue("maxDailyTime", maxMinutes);
+        }
+      } catch {
+        // Keep manual value if schedule can't be fetched
+      }
+    }
+    fetchSchedule();
+  }, [form]);
+
   return (
     <div className="space-y-6">
       <Card className="border-border">
@@ -54,15 +104,30 @@ export function GeneralSettingsTab({ form }: GeneralSettingsTabProps) {
               name="maxDailyTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tempo Maximo Diario (minutos)</FormLabel>
+                  <FormLabel>Tempo Maximo Diario</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                      className="bg-background border-border"
-                    />
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        {...field}
+                        value={field.value}
+                        readOnly
+                        disabled
+                        className="bg-muted border-border pr-12"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        h
+                      </span>
+                    </div>
                   </FormControl>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {maxDailyFromSchedule
+                        ? `${formatMinutesToHours(maxDailyFromSchedule)} - calculado pelo seu horario de trabalho`
+                        : "Calculado pelo seu horario de trabalho"}
+                    </span>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -106,7 +171,7 @@ export function GeneralSettingsTab({ form }: GeneralSettingsTabProps) {
               name="baseSmallTattooTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tempo Minimo (minutos)</FormLabel>
+                  <FormLabel>Tempo Minimo (horas)</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -114,10 +179,10 @@ export function GeneralSettingsTab({ form }: GeneralSettingsTabProps) {
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                         className="pr-12 bg-background border-border"
-                        placeholder="30"
+                        placeholder="0.5"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                        min
+                        h
                       </span>
                     </div>
                   </FormControl>

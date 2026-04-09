@@ -14,6 +14,7 @@ import {
   Link2,
   ArrowRight,
   CheckCircle,
+  Eye,
 } from "lucide-react";
 
 function FadeInUp({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
@@ -106,6 +107,16 @@ export default function LandingPage() {
                   >
                     Comece Gratis
                     <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/t/demo" target="_blank">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-primary/50 hover:bg-primary/10 font-mono uppercase tracking-wider text-base px-8"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Demo
                   </Button>
                 </Link>
                 <Link href="/login">
