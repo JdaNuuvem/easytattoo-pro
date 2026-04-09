@@ -19,9 +19,6 @@ interface ArtistData {
   styles: string[];
   portfolio: string[];
   phone?: string;
-  pixKey?: string;
-  pixName?: string;
-  pixBank?: string;
   acceptsCompanion?: boolean;
   maxCompanions?: number;
   paymentMethods?: string[];
@@ -76,9 +73,6 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
           styles: data.styles || [],
           portfolio: data.portfolio || [],
           phone: data.phone || undefined,
-          pixKey: data.pixKey || undefined,
-          pixName: data.pixName || undefined,
-          pixBank: data.pixBank || undefined,
           acceptsCompanion: data.acceptsCompanion ?? true,
           maxCompanions: data.maxCompanions ?? 1,
           paymentMethods: data.paymentMethods || [],
@@ -120,9 +114,6 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
       styles: artist?.styles ?? [],
       portfolio: artist?.portfolio ?? [],
       phone: artist?.phone,
-      pixKey: artist?.pixKey,
-      pixName: artist?.pixName,
-      pixBank: artist?.pixBank,
       acceptsCompanion: artist?.acceptsCompanion,
       maxCompanions: artist?.maxCompanions,
       paymentMethods: artist?.paymentMethods,

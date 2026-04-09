@@ -24,9 +24,6 @@ export interface BookingState {
     styles: Array<string>;
     portfolio: Array<string>;
     phone?: string;
-    pixKey?: string;
-    pixName?: string;
-    pixBank?: string;
     acceptsCompanion?: boolean;
     maxCompanions?: number;
     paymentMethods?: string[];

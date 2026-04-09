@@ -29,21 +29,6 @@ export class UpdateProfileDto {
   @IsOptional()
   readonly bio?: string;
 
-  @ApiPropertyOptional({ example: 'john@pix.com' })
-  @IsString()
-  @IsOptional()
-  readonly pixKey?: string;
-
-  @ApiPropertyOptional({ example: 'John Doe' })
-  @IsString()
-  @IsOptional()
-  readonly pixName?: string;
-
-  @ApiPropertyOptional({ example: 'Nubank' })
-  @IsString()
-  @IsOptional()
-  readonly pixBank?: string;
-
   @ApiPropertyOptional({ example: 20, minimum: 0, maximum: 100 })
   @IsNumber()
   @Min(0)

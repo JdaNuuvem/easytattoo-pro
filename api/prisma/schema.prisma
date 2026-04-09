@@ -56,9 +56,6 @@ model User {
   phone                 String?
   instagram             String?
   bio                   String?
-  pixKey                String?
-  pixName               String?
-  pixBank               String?
   depositPercentage     Float           @default(20)
   profilePhoto          String?
   coverPhoto            String?

@@ -5,9 +5,6 @@ export interface User {
   phone?: string;
   instagram?: string;
   bio?: string;
-  pixKey?: string;
-  pixName?: string;
-  pixBank?: string;
   fixedDeposit: number;
   profilePhoto?: string;
   coverPhoto?: string;

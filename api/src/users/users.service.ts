@@ -30,9 +30,6 @@ export class UsersService {
         profilePhoto: true,
         coverPhoto: true,
         acceptsCompanion: true,
-        pixKey: true,
-        pixName: true,
-        pixBank: true,
       },
     });
 
