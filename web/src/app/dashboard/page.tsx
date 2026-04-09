@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, DollarSign, Users, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, DollarSign, Users, CheckCircle, Play } from "lucide-react";
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 import {
   MetricCardSkeleton,
   ChartSkeleton,
@@ -38,8 +41,14 @@ const defaultMetrics: DashboardMetrics = {
 };
 
 export default function DashboardPage() {
+  const user = useAuth((state) => state.user);
   const [metrics, setMetrics] = useState<DashboardMetrics>(defaultMetrics);
   const [loading, setLoading] = useState(true);
+
+  const handleOpenDemo = () => {
+    const artistId = user?.id ?? "demo";
+    window.open(`/t/${artistId}`, "_blank", "noopener,noreferrer");
+  };
   const [revenueChartData, setRevenueChartData] = useState<
     Array<{ date: string; revenue: number }>
   >([]);
@@ -121,28 +130,23 @@ export default function DashboardPage() {
   const metricCards = [
     {
       title: "Agendamentos Hoje",
-      value: metrics.bookingsToday,
+      value: String(metrics.bookingsToday),
       icon: Calendar,
-      format: (v: number) => String(v),
     },
     {
       title: "Receita do Mes",
-      value: metrics.monthRevenue,
+      value: `R$ ${metrics.monthRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       icon: DollarSign,
-      format: (v: number) =>
-        `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
     },
     {
       title: "Clientes Novos",
-      value: metrics.newClients,
+      value: String(metrics.newClients),
       icon: Users,
-      format: (v: number) => String(v),
     },
     {
       title: "Taxa de Confirmacao",
-      value: metrics.confirmationRate,
+      value: `${metrics.confirmationRate}%`,
       icon: CheckCircle,
-      format: (v: number) => `${v}%`,
     },
   ];
 
@@ -151,34 +155,30 @@ export default function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description="Visao geral do seu estudio"
-      />
+      >
+        <Button
+          onClick={handleOpenDemo}
+          variant="outline"
+          className="font-mono uppercase tracking-wider border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+        >
+          <Play className="mr-2 h-4 w-4" />
+          Demo Fluxo Cliente
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
               <MetricCardSkeleton key={i} />
             ))
-          : metricCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <Card
-                  key={card.title}
-                  className="border-border hover:border-primary/30 hover:glow-magenta transition-all"
-                >
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-xs font-medium text-muted-foreground normal-case tracking-normal">
-                      {card.title}
-                    </CardTitle>
-                    <Icon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-foreground">
-                      {card.format(card.value)}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          : metricCards.map((card) => (
+              <MetricCard
+                key={card.title}
+                title={card.title}
+                value={card.value}
+                icon={card.icon}
+              />
+            ))}
       </div>
 
       {/* Charts */}
