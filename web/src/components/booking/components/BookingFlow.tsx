@@ -34,12 +34,13 @@ import {
   Calendar,
   CreditCard,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface BookingFlowProps {
   artistId: string;
 }
 
-const stepIcons: Record<BookingStep, React.ElementType> = {
+const stepIcons: Record<BookingStep, LucideIcon> = {
   artist: User,
   personal: FileText,
   ageTerms: Shield,
@@ -135,8 +136,8 @@ export function BookingFlow({ artistId }: BookingFlowProps) {
   };
 
   const progressPercent = ((displayStep + 1) / totalSteps) * 100;
-  const CurrentIcon: React.ElementType =
-    (currentStepName && stepIcons[currentStepName as BookingStep]) || Pen;
+  const CurrentIcon: LucideIcon =
+    (currentStepName ? stepIcons[currentStepName as BookingStep] : Pen) || Pen;
 
   // Build visible steps for the mini stepper
   const visibleSteps = STEPS.filter((step) => {
