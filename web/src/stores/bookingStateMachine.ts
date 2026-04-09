@@ -1,6 +1,5 @@
 export const STEPS = [
   "artist",
-  "personal",
   "ageTerms",
   "companion",
   "type",
@@ -11,6 +10,7 @@ export const STEPS = [
   "references",
   "promotion",
   "scheduling",
+  "personal",
   "payment",
 ] as const;
 
