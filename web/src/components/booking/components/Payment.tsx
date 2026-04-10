@@ -66,6 +66,27 @@ export function Payment() {
   }, [pollingInterval]);
 
   const generateAsaasPayment = async () => {
+    // Demo mode - simulate payment flow
+    if (artistInfo?.id === "demo") {
+      setStatus("generating");
+      setTimeout(() => {
+        setPaymentData({
+          id: "demo-payment",
+          pixQrCode: "",
+          pixCopyPaste: "00020126580014br.gov.bcb.pix0136demo-pix-easytattoo-pro",
+          dueDate: new Date().toISOString(),
+          value: depositAmount,
+        });
+        setStatus("awaiting");
+        // Auto-confirm after 3 seconds in demo
+        setTimeout(() => {
+          setStatus("confirmed");
+          updatePayment({ proofOfPayment: "demo:confirmed" });
+        }, 3000);
+      }, 1500);
+      return;
+    }
+
     setStatus("generating");
     try {
       const { data } = await api.post("/payments/pix", {

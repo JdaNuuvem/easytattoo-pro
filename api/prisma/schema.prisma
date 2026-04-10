@@ -62,6 +62,7 @@ model User {
   acceptsCompanion      Boolean         @default(true)
   maxCompanions         Int             @default(1)
   maxDailyHours         Int             @default(8)
+  bookingDeadline       String          @default("21:00")
   googleId              String?         @unique
   googleAccessToken     String?
   googleRefreshToken    String?

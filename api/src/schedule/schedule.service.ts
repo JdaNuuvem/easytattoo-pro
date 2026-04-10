@@ -1,15 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkScheduleDto } from './dto/create-work-schedule.dto';
 import { CreateSpecialDateDto } from './dto/create-special-date.dto';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service';
 
 @Injectable()
 export class ScheduleService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ScheduleService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly googleCalendarService: GoogleCalendarService,
+  ) {}
 
   // Public: get work schedule for a user
   async getByUserId(userId: string) {
-    const [workSchedules, specialDates] = await Promise.all([
+    const [user, workSchedules, specialDates] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { bookingDeadline: true },
+      }),
       this.prisma.workSchedule.findMany({
         where: { userId },
         include: {
@@ -23,7 +33,20 @@ export class ScheduleService {
       }),
     ]);
 
-    return { workSchedules, specialDates };
+    return {
+      workSchedules,
+      specialDates,
+      bookingDeadline: user?.bookingDeadline ?? '21:00',
+    };
+  }
+
+  // Update booking deadline
+  async updateBookingDeadline(userId: string, bookingDeadline: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { bookingDeadline },
+      select: { bookingDeadline: true },
+    });
   }
 
   // Public: get available time slots for a specific date
@@ -239,5 +262,16 @@ export class ScheduleService {
     return this.prisma.specialDate.delete({
       where: { id: dateId },
     });
+  }
+
+  // Sync work schedule to Google Calendar
+  async syncWorkScheduleToGoogleCalendar(userId: string): Promise<{ synced: boolean }> {
+    try {
+      await this.googleCalendarService.syncWorkScheduleToCalendar(userId);
+      return { synced: true };
+    } catch (error) {
+      this.logger.error(`Failed to sync work schedule to Google Calendar: ${error}`);
+      return { synced: false };
+    }
   }
 }

@@ -56,6 +56,18 @@ export function BookingConfirmation({ artistId }: BookingConfirmationProps) {
   const handleSubmitBooking = async () => {
     setSubmitting(true);
     try {
+      // Demo mode - simulate booking success
+      if ((artistInfo?.id || artistId) === "demo") {
+        await new Promise((r) => setTimeout(r, 1000));
+        setSubmitted(true);
+        toast({
+          title: "Demo - Agendamento simulado!",
+          description: "Em um agendamento real, o booking seria criado e o tatuador notificado.",
+        });
+        setSubmitting(false);
+        return;
+      }
+
       const validReferences = tattooDetails.references.filter(
         (r) => !r.startsWith("blob:")
       );

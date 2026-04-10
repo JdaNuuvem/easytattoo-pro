@@ -373,6 +373,122 @@ export class GoogleCalendarService {
   }
 
   /**
+   * Syncs work schedule to Google Calendar as recurring blocked-time events.
+   * Called when artist saves their work hours.
+   */
+  async syncWorkScheduleToCalendar(userId: string): Promise<void> {
+    const connected = await this.isConnected(userId);
+    if (!connected) return;
+
+    const accessToken = await this.getAccessToken(userId);
+    if (!accessToken) return;
+
+    const calendarId = await this.getCalendarId(userId);
+
+    const workSchedules = await this.prisma.workSchedule.findMany({
+      where: { userId },
+      orderBy: { dayOfWeek: 'asc' },
+    });
+
+    // Delete old recurring work-schedule events
+    const existingEvents = await this.listWorkScheduleEvents(accessToken, calendarId);
+    for (const ev of existingEvents) {
+      await this.deleteEvent(userId, ev.id);
+    }
+
+    // Create new recurring events for each active work day
+    const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+    // Find next occurrence of each day of week
+    const now = new Date();
+    for (const schedule of workSchedules) {
+      if (!schedule.isAvailable) continue;
+
+      const nextDate = this.getNextDayOfWeek(now, schedule.dayOfWeek);
+      const dateStr = nextDate.toISOString().split('T')[0];
+
+      const body = {
+        summary: `Horario de Trabalho - EasyTattoo`,
+        description: 'Horario de trabalho configurado no EasyTattoo Pro. Nao remova este evento.',
+        start: {
+          dateTime: `${dateStr}T${schedule.startTime}:00`,
+          timeZone: 'America/Sao_Paulo',
+        },
+        end: {
+          dateTime: `${dateStr}T${schedule.endTime}:00`,
+          timeZone: 'America/Sao_Paulo',
+        },
+        recurrence: [
+          `RRULE:FREQ=WEEKLY;BYDAY=${dayMap[schedule.dayOfWeek]}`,
+        ],
+        transparency: 'opaque',
+        colorId: '9', // blueberry
+        extendedProperties: {
+          private: {
+            easytattoo: 'work-schedule',
+          },
+        },
+      };
+
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+
+      if (!response.ok) {
+        this.logger.error(
+          `Failed to create work schedule event for day ${schedule.dayOfWeek}: ${(await response.text()).slice(0, 200)}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Lists existing work-schedule events from Google Calendar.
+   */
+  private async listWorkScheduleEvents(
+    accessToken: string,
+    calendarId: string,
+  ): Promise<Array<{ id: string }>> {
+    const params = new URLSearchParams({
+      q: 'Horario de Trabalho - EasyTattoo',
+      maxResults: '50',
+      singleEvents: 'false',
+    });
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?${params}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return (data.items || [])
+      .filter((item: any) =>
+        item.extendedProperties?.private?.easytattoo === 'work-schedule',
+      )
+      .map((item: any) => ({ id: item.id }));
+  }
+
+  /**
+   * Gets the next occurrence of a specific day of week.
+   */
+  private getNextDayOfWeek(from: Date, dayOfWeek: number): Date {
+    const date = new Date(from);
+    const diff = (dayOfWeek - date.getDay() + 7) % 7;
+    date.setDate(date.getDate() + (diff === 0 ? 0 : diff));
+    return date;
+  }
+
+  /**
    * Gets the Google Calendar connection status for a user.
    */
   async getConnectionStatus(userId: string): Promise<{

@@ -63,6 +63,31 @@ export class ScheduleController {
     return this.scheduleService.getAvailableSlots(userId, date);
   }
 
+  // Protected: Sync to Google Calendar
+  @Post('sync-google-calendar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'ARTIST')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Sync work schedule to Google Calendar' })
+  @ApiResponse({ status: 200, description: 'Sync result' })
+  async syncToGoogleCalendar(@CurrentUser('id') userId: string) {
+    return this.scheduleService.syncWorkScheduleToGoogleCalendar(userId);
+  }
+
+  // Protected: Booking Deadline
+  @Put('booking-deadline')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'ARTIST')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update booking deadline time' })
+  @ApiResponse({ status: 200, description: 'Booking deadline updated' })
+  async updateBookingDeadline(
+    @CurrentUser('id') userId: string,
+    @Body() body: { bookingDeadline: string },
+  ) {
+    return this.scheduleService.updateBookingDeadline(userId, body.bookingDeadline);
+  }
+
   // Protected: Work Hours CRUD
   @Post('work-hours')
   @UseGuards(JwtAuthGuard, RolesGuard)

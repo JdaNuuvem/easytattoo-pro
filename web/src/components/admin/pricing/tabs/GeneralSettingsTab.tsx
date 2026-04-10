@@ -171,7 +171,7 @@ export function GeneralSettingsTab({ form }: GeneralSettingsTabProps) {
               name="baseSmallTattooTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tempo Minimo (horas)</FormLabel>
+                  <FormLabel>Quanto tempo voce leva pra fazer uma tattoo de ate 5cm?</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input

@@ -80,6 +80,18 @@ export class BookingsService {
       promotion: dto.promotion || 'NONE',
     });
 
+    // Determine booking status based on deadline
+    let bookingStatus: string = 'PENDING';
+    if (dto.scheduledTime && user.bookingDeadline) {
+      const [schedH, schedM] = dto.scheduledTime.split(':').map(Number);
+      const [deadH, deadM] = user.bookingDeadline.split(':').map(Number);
+      const scheduledMinutes = schedH * 60 + (schedM || 0);
+      const deadlineMinutes = deadH * 60 + (deadM || 0);
+      if (scheduledMinutes <= deadlineMinutes) {
+        bookingStatus = 'CONFIRMED';
+      }
+    }
+
     // Create booking
     const booking = await this.prisma.booking.create({
       data: {
@@ -95,6 +107,7 @@ export class BookingsService {
         hasCompanion: dto.hasCompanion || false,
         description: dto.description,
         promotion: (dto.promotion || 'NONE') as any,
+        status: bookingStatus as any,
         scheduledDate: dto.scheduledDate
           ? new Date(dto.scheduledDate)
           : null,

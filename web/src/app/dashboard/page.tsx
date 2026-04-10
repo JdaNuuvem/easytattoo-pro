@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Users, CheckCircle, Play } from "lucide-react";
+import { Calendar, DollarSign, Users, CheckCircle, Play, Link2, Copy, Check, ExternalLink } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import {
   MetricCardSkeleton,
@@ -42,11 +43,24 @@ const defaultMetrics: DashboardMetrics = {
 
 export default function DashboardPage() {
   const user = useAuth((state) => state.user);
+  const { toast } = useToast();
   const [metrics, setMetrics] = useState<DashboardMetrics>(defaultMetrics);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const artistId = user?.id ?? "demo";
+  const myLink = typeof window !== "undefined"
+    ? `${window.location.origin}/t/${artistId}`
+    : `/t/${artistId}`;
+
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(myLink);
+    setCopied(true);
+    toast({ title: "Link copiado!", description: "Compartilhe com seus clientes." });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleOpenDemo = () => {
-    const artistId = user?.id ?? "demo";
     window.open(`/t/${artistId}`, "_blank", "noopener,noreferrer");
   };
   const [revenueChartData, setRevenueChartData] = useState<
@@ -165,6 +179,41 @@ export default function DashboardPage() {
           Demo Fluxo Cliente
         </Button>
       </PageHeader>
+
+      {/* Meu Link */}
+      <Card className="border-primary/30 bg-primary/[0.02] mb-6">
+        <CardContent className="py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link2 className="h-5 w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Meu Link de Agendamento</p>
+              <p className="text-sm font-medium truncate">{myLink}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              className="border-border font-mono uppercase tracking-wider"
+            >
+              {copied ? (
+                <><Check className="h-4 w-4 mr-1" /> Copiado</>
+              ) : (
+                <><Copy className="h-4 w-4 mr-1" /> Copiar</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenDemo}
+              className="border-border font-mono uppercase tracking-wider"
+            >
+              <ExternalLink className="h-4 w-4 mr-1" /> Abrir
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {loading

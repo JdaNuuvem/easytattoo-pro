@@ -64,6 +64,22 @@ export function Scheduling() {
     async function fetchSlots() {
       setLoadingSlots(true);
       setSlotsError(false);
+
+      // Demo mode - generate mock slots
+      if (artistInfo!.id === "demo") {
+        const demoSlots: AvailableSlot[] = [];
+        for (let h = 9; h < 18; h++) {
+          demoSlots.push({
+            id: `demo-${h}`,
+            startTime: `${h.toString().padStart(2, "0")}:00`,
+            endTime: `${(h + 1).toString().padStart(2, "0")}:00`,
+          });
+        }
+        setAvailableSlots(demoSlots);
+        setLoadingSlots(false);
+        return;
+      }
+
       try {
         const { data } = await api.get(
           `/schedule/${artistInfo!.id}/available-slots?date=${selectedDate}`

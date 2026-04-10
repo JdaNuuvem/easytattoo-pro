@@ -49,6 +49,59 @@ function getStyleImage(style: string): string {
   return STYLE_IMAGES[key] || "/images/styles/default.jpg";
 }
 
+const DEMO_ARTIST: ArtistData = {
+  id: "demo",
+  name: "Pedro Gringo",
+  profileImage: "",
+  bio: "Tatuador profissional ha 8 anos, especializado em Fineline, Blackwork e Realismo. Atendimento personalizado com foco na sua experiencia.",
+  styles: ["Fineline", "Blackwork", "Realismo", "Pontilhismo", "Minimalista", "Lettering"],
+  portfolio: [],
+  phone: "(11) 99999-9999",
+  acceptsCompanion: true,
+  maxCompanions: 1,
+  paymentMethods: ["PIX", "Cartao de Credito", "Dinheiro"],
+  studios: [{ id: "demo-studio", name: "Easy Tattoo Studio", address: "Rua das Artes, 123 - Sao Paulo, SP" }],
+};
+
+const DEMO_PRICING = {
+  baseSmallTattooPrice: 150,
+  baseSmallTattooTime: 0.5,
+  priceTable: [
+    { width: 4, height: 4, price: 150, time: 0.5 },
+    { width: 5, height: 5, price: 147, time: 0.5 },
+    { width: 6, height: 6, price: 177, time: 0.5 },
+    { width: 7, height: 7, price: 197, time: 1 },
+    { width: 8, height: 8, price: 207, time: 1.5 },
+    { width: 9, height: 9, price: 227, time: 1.5 },
+    { width: 10, height: 10, price: 247, time: 1.5 },
+    { width: 11, height: 11, price: 307, time: 2.5 },
+    { width: 12, height: 12, price: 357, time: 2.5 },
+    { width: 13, height: 13, price: 427, time: 3.5 },
+    { width: 14, height: 14, price: 487, time: 4.5 },
+    { width: 15, height: 15, price: 557, time: 5 },
+    { width: 20, height: 20, price: 987, time: 7 },
+    { width: 25, height: 25, price: 1157, time: 8 },
+    { width: 30, height: 30, price: 1407, time: 12 },
+  ],
+  bodyLocations: {
+    "Bracos": 0, "Pernas": 0, "Maos": 0, "Pes": 0,
+    "Joelho": 0, "Cotovelo": 0, "Pescoco": 0, "Nuca": 0, "Rosto": 0, "Cabeca": 0,
+    "Costas": 0, "Peito": 0, "Costela": 0, "Meio dos Seios": 0,
+    "Partes Intimas": 0, "Areas de fechamento": 0,
+  },
+  shadingOptions: {
+    "Linhas simples": 0, "Sombreamento leve": 0, "Sombreamento medio": 0, "Sombreamento complexo": 0,
+  },
+  colorOptions: {
+    "Preto e cinza": 0, "1 cor adicional": 0, "2 cores": 0, "3 cores ou mais": 0, "Tattoo toda colorida": 0,
+  },
+  tattooTypes: {
+    "Fineline": 0, "Blackwork": 0, "Realismo": 0, "Pontilhismo": 0, "Minimalista": 0, "Lettering": 0,
+  },
+  maxDailyTime: 8,
+  fixedDeposit: 50,
+};
+
 export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
   const { goToNextStep } = useBookingNavigation();
   const { updateArtistInfo, updatePricingConfig } = useBookingStore();
@@ -59,6 +112,14 @@ export function ArtistPresentation({ artistId }: ArtistPresentationProps) {
   useEffect(() => {
     async function fetchArtist() {
       if (!artistId) {
+        setLoading(false);
+        return;
+      }
+
+      // Demo mode - use mock data
+      if (artistId === "demo") {
+        setArtist(DEMO_ARTIST);
+        updatePricingConfig(DEMO_PRICING);
         setLoading(false);
         return;
       }

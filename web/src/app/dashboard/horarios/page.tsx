@@ -77,6 +77,7 @@ const DEFAULT_SCHEDULES: Omit<WorkHour, "id">[] = [
 export default function HorariosPage() {
   const [workHours, setWorkHours] = useState<WorkHour[]>([]);
   const [specialDates, setSpecialDates] = useState<SpecialDate[]>([]);
+  const [bookingDeadline, setBookingDeadline] = useState("21:00");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isNewSchedule, setIsNewSchedule] = useState(false);
@@ -141,6 +142,7 @@ export default function HorariosPage() {
       const data = response.data;
       const schedules = data.workSchedules || [];
       setSpecialDates(data.specialDates || []);
+      if (data.bookingDeadline) setBookingDeadline(data.bookingDeadline);
 
       if (schedules.length === 0) {
         // Generate local defaults for editing - not saved yet
@@ -171,6 +173,9 @@ export default function HorariosPage() {
   async function handleSaveSchedule() {
     setSaving(true);
     try {
+      // Save booking deadline
+      await api.put("/schedule/booking-deadline", { bookingDeadline }).catch(() => {});
+
       if (isNewSchedule) {
         // Create all work hours
         const created: WorkHour[] = [];
@@ -196,9 +201,12 @@ export default function HorariosPage() {
           });
         }
       }
+      // Sync to Google Calendar (fire-and-forget)
+      api.post("/schedule/sync-google-calendar").catch(() => {});
+
       toast({
         title: "Horarios salvos",
-        description: "Seus horarios de trabalho foram atualizados",
+        description: "Seus horarios de trabalho foram atualizados e sincronizados com o Google Calendar",
       });
     } catch (error) {
       toast({
@@ -355,6 +363,32 @@ export default function HorariosPage() {
           Configure seus horarios abaixo e clique em <strong>Salvar</strong> para confirmar.
         </div>
       )}
+
+      {/* Booking Deadline */}
+      <Card className="border-border mb-6">
+        <CardHeader>
+          <CardTitle className="text-sm">Horario Limite para Agendamento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Agendamentos feitos apos esse horario ficam como <strong>pendentes</strong> e precisam da sua aprovacao manual.
+            </p>
+            <div className="flex items-center gap-3">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="time"
+                value={bookingDeadline}
+                onChange={(e) => setBookingDeadline(e.target.value)}
+                className="w-40 bg-background border-border"
+              />
+              <span className="text-xs text-muted-foreground">
+                Agendamentos ate {bookingDeadline} sao aceitos automaticamente
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Work Hours Grid */}
       <Card className="border-border mb-6">
