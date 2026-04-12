@@ -178,9 +178,19 @@ export function TattooSize() {
     useBookingStore();
   const { goToNextStep, goToPreviousStep } = useBookingNavigation();
 
-  const maxSize = pricingConfig.priceTable[pricingConfig.priceTable.length - 1];
-  const minSize = pricingConfig.priceTable[0];
   const isTextType = tattooDetails.type === "text";
+
+  const drawingEntries = pricingConfig.priceTable.filter(
+    (entry) => entry.type === "drawing"
+  );
+  const textEntries = pricingConfig.priceTable.filter(
+    (entry) => entry.type === "text"
+  );
+  const relevantEntries = isTextType ? textEntries : drawingEntries;
+  const minSize = relevantEntries[0] ?? pricingConfig.priceTable[0];
+  const maxSize =
+    relevantEntries[relevantEntries.length - 1] ??
+    pricingConfig.priceTable[pricingConfig.priceTable.length - 1];
 
   const isFixedSize =
     tattooDetails.size.width === FIXED_SIZE.width &&
